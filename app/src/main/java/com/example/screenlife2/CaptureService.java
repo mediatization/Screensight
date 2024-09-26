@@ -36,11 +36,21 @@ public class CaptureService extends Service {
     }
     /** Methods for the client */
     // Pauses capturing
+    public void start(){
+        captureScheduler.startCapture();
+    }
+    // Pauses capturing
     public void pause(){
         captureScheduler.pauseCapture();
+    }
+    // Pauses capturing
+    public void stop(){
+        captureScheduler.stopCapture();
     }
     // Returns captured files
     public String[] getFiles(){
         return captureScheduler.getCaptures();
     }
+    // Returns the capture status
+    public CaptureScheduler.CaptureStatus getCaptureStatus() { return captureScheduler.getCaptureStatus();}
 }
