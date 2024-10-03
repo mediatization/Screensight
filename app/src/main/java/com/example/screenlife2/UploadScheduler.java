@@ -13,6 +13,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 // The main upload service
+// is responsible for actually uploading, uploadService is what allows this to
+// run asynchronously
 public class UploadScheduler {
     public enum UploadStatus
     {
@@ -60,6 +62,12 @@ public class UploadScheduler {
     //presumably the startForegroundService call will call one of the other files in this folder
     //and that is where all the intent/context variables originate from
     public void uploadImages(Context context) {
+        //capture scheduler -> getCaptures returns a list of all files
+        //capture service wraps around scheduler, go through capture service to get the files
+        //mainActivities via a callback can check for when it needs to pass list of files to scheduluer
+        //mainActivities can also pass files when button is pressed
+        //mainActivities will pause captureService tell uploadService to upload, then once upload service is
+        //done, resume capturing
         File f_encrypt =
                 new File(context.getExternalFilesDir(null).getAbsolutePath() + File.separator +
                         "encrypt");
@@ -68,7 +76,8 @@ public class UploadScheduler {
         String key = prefs.getString("participantKey", "MISSING_KEY");
 
         //ask about what intents do, preferably we don't need a second class
-        //
+        //probably dont need to pass all the extra info to the service, can be handled by main more easily
+        //check captureScheduler for more in depth examples information
         Intent intent = new Intent(context, UploadService.class);
         intent.putExtra("dirPath", f_encrypt.getAbsolutePath());
         intent.putExtra("continueWithoutWifi", wifiConnection);
@@ -76,6 +85,7 @@ public class UploadScheduler {
         intent.putExtra("key", key);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            //check lab notes for info about background/foreground/bound services
             context.startForegroundService(intent);
         }
     }
