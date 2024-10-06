@@ -5,5 +5,5 @@
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
     </style>
 
-    <style name="Theme.ScreenLife2" parent="Base.Theme.ScreenLife2" />
+    <style name="Theme.ScreenLife2" parent="Base.Theme.ScreenLife2"/>
 </resources>

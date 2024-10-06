@@ -33,6 +33,7 @@ import java.util.concurrent.ScheduledFuture;
 
 // Another version of the capture service that uses a ScheduledExecutorService
 public class CaptureScheduler {
+    private static final String TAG = "CaptureScheduler";
     public interface CaptureListener{
         void onInvoke(CaptureStatus status, int numCaptured);
     }
@@ -61,10 +62,10 @@ public class CaptureScheduler {
     private ImageReader m_imageReader;
     // TODO: FIGURE OUT THIS AND WHERE TO GET IT, ALSO IMAGE READER???
     private KeyguardManager m_keyguardManager;
-    private int m_pixelStride;
-    private int m_rowPadding;
-    private int DISPLAY_WIDTH;
-    private int DISPLAY_HEIGHT;
+    private static int m_pixelStride;
+    private static int m_rowPadding;
+    private final int DISPLAY_WIDTH = 720;
+    private final int DISPLAY_HEIGHT = 1280;
     private static final DateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
     private HashSet<CaptureListener> m_onStatusChangedCallbacks = new HashSet<CaptureListener>();
 
@@ -83,6 +84,7 @@ public class CaptureScheduler {
     }
     // Schedules to start
     public void startCapture() {
+        Log.d(TAG, "Starting capture");
         stopCapture();
         insertResumeImage();
         Runnable captureRunner = this::takeCapture;

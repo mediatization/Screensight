@@ -7,95 +7,91 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/m_uploadButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="UPLOAD AND CLEAR STORED DATA"
-        tools:layout_editor_absoluteX="67dp"
-        tools:layout_editor_absoluteY="544dp" />
+    <LinearLayout
+        android:layout_width="410dp"
+        android:layout_height="734dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <Button
-        android:id="@+id/m_startStopCaptureButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="START/STOP CAPTURE"
-        tools:layout_editor_absoluteX="105dp"
-        tools:layout_editor_absoluteY="366dp" />
+        <TextView
+            android:id="@+id/m_userKeyText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="USER KEY VIEW" />
 
-    <Button
-        android:id="@+id/m_userKeySubmitButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="SUBMIT KEY"
-        tools:layout_editor_absoluteX="141dp"
-        tools:layout_editor_absoluteY="125dp" />
+        <Button
+            android:id="@+id/m_uploadButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="UPLOAD AND CLEAR STORED DATA" />
 
-    <Button
-        android:id="@+id/m_userKeyEditButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="EDIT KEY"
-        tools:layout_editor_absoluteX="152dp"
-        tools:layout_editor_absoluteY="194dp" />
+        <Button
+            android:id="@+id/m_startStopCaptureButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="START/STOP CAPTURE" />
 
-    <TextView
-        android:id="@+id/m_uploadStatusText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="UPLOAD STATUS"
-        tools:layout_editor_absoluteX="152dp"
-        tools:layout_editor_absoluteY="503dp" />
+        <Button
+            android:id="@+id/m_userKeySubmitButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SUBMIT KEY" />
 
-    <TextView
-        android:id="@+id/m_userKeyTextInput"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:editable="true"
-        android:text="USER KEY INPUT"
-        tools:layout_editor_absoluteX="152dp"
-        tools:layout_editor_absoluteY="92dp" />
+        <Button
+            android:id="@+id/m_userKeyEditButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="EDIT KEY" />
 
-    <TextView
-        android:id="@+id/m_userKeyText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="USER KEY VIEW"
-        tools:layout_editor_absoluteX="155dp"
-        tools:layout_editor_absoluteY="37dp" />
+        <TextView
+            android:id="@+id/m_uploadStatusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="UPLOAD STATUS" />
 
-    <TextView
-        android:id="@+id/m_numCapturedFilesText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="NUM CAPTURED FILES"
-        tools:layout_editor_absoluteX="133dp"
-        tools:layout_editor_absoluteY="320dp" />
+        <EditText
+            android:id="@+id/m_userKeyTextInput"
+            android:layout_width="wrap_content"
+            android:layout_height="72dp"
+            android:height="52dp"
+            android:hint="Enter Key"
+            android:inputType="text"
+            android:text="USER KEY INPUT" />
 
-    <Button
-        android:id="@+id/m_resumePauseCaptureButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="RESUME/PAUSE CAPTURE"
-        tools:layout_editor_absoluteX="96dp"
-        tools:layout_editor_absoluteY="429dp" />
+        <TextView
+            android:id="@+id/m_numCapturedFilesText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="NUM CAPTURED FILES" />
 
-    <TextView
-        android:id="@+id/m_captureStatusText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="CAPTURE STATUS"
-        tools:layout_editor_absoluteX="148dp"
-        tools:layout_editor_absoluteY="279dp" />
+        <Button
+            android:id="@+id/m_resumePauseCaptureButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="RESUME/PAUSE CAPTURE" />
 
-    <ToggleButton
-        android:id="@+id/m_settingUseCellularButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="ToggleButton"
-        android:textOff="WAIT FOR WIFI"
-        android:textOn="USE CELLULAR"
-        tools:layout_editor_absoluteX="146dp"
-        tools:layout_editor_absoluteY="621dp" />
+        <TextView
+            android:id="@+id/m_captureStatusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:height="48dp"
+            android:text="CAPTURE STATUS" />
+
+        <ToggleButton
+            android:id="@+id/m_settingUseCellularButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ToggleButton"
+            android:textOff="WAIT FOR WIFI"
+            android:textOn="USE CELLULAR" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

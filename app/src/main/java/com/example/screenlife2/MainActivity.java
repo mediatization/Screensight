@@ -3,41 +3,40 @@ package com.example.screenlife2;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.ToggleButton;
+import android.Manifest;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-
-import com.google.android.material.textfield.TextInputEditText;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
+
     /** UI Members */
-    private final Button m_startStopCaptureButton = findViewById(R.id.m_startStopCaptureButton);
-    private final Button m_resumePauseCaptureButton = findViewById(R.id.m_resumePauseCaptureButton);
-    private final Button m_uploadButton = findViewById(R.id.m_uploadButton);
-    private final TextView m_captureStatusText = findViewById(R.id.m_captureStatusText);
-    private final TextView m_numCapturedFilesText = findViewById(R.id.m_numCapturedFilesText);
-    private final TextView m_uploadStatusText = findViewById(R.id.m_uploadStatusText);
-    private final EditText m_userKeyTextInput = findViewById(R.id.m_userKeyTextInput);
-    private final Button m_userKeySubmitButton = findViewById(R.id.m_userKeySubmitButton);
-    private final Button m_userKeyEditButton = findViewById(R.id.m_userKeyEditButton);
-    private final TextView m_userKeyText = findViewById(R.id.m_userKeyText);
-    private final ToggleButton m_settingUseCellularButton = findViewById(R.id.m_settingUseCellularButton);
+    private Button m_startStopCaptureButton;
+    private Button m_resumePauseCaptureButton;
+    private Button m_uploadButton;
+    private TextView m_captureStatusText;
+    private TextView m_numCapturedFilesText;
+    private TextView m_uploadStatusText;
+    private EditText m_userKeyTextInput;
+    private Button m_userKeySubmitButton;
+    private Button m_userKeyEditButton;
+    private TextView m_userKeyText;
+    private ToggleButton m_settingUseCellularButton;
 
     /** Data Members*/
     private Settings m_settings = null;
@@ -75,21 +74,36 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+        // Load the UI layout from res/layout/activity_main.xml
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+
+        // Log message indicating that the UI is being displayed
+        Log.d(TAG, "Activity Created");
+
+        // Set up UI
+        m_startStopCaptureButton = findViewById(R.id.m_startStopCaptureButton);
+        m_resumePauseCaptureButton = findViewById(R.id.m_resumePauseCaptureButton);
+        m_uploadButton = findViewById(R.id.m_uploadButton);
+        m_captureStatusText = findViewById(R.id.m_captureStatusText);
+        m_numCapturedFilesText = findViewById(R.id.m_numCapturedFilesText);
+        m_uploadStatusText = findViewById(R.id.m_uploadStatusText);
+        m_userKeyTextInput = findViewById(R.id.m_userKeyTextInput);
+        m_userKeySubmitButton = findViewById(R.id.m_userKeySubmitButton);
+        m_userKeyEditButton = findViewById(R.id.m_userKeyEditButton);
+        m_userKeyText = findViewById(R.id.m_userKeyText);
+        m_settingUseCellularButton = findViewById(R.id.m_settingUseCellularButton);
+        Log.d(TAG, "UI was set up");
         // Try to grab the settings
         loadOrCreateSettings();
+        Log.d(TAG, "Settings were loaded");
         // Populate the settings
         m_userKeyTextInput.setText(m_settings.getString("hash", "00000000"));
         m_settingUseCellularButton.setChecked(Boolean.parseBoolean(m_settings.getString("useCellular", "")));
+        Log.d(TAG, "Settings UI was updated");
         // Initialize the rest of the UI
         // TODO: CHANGE THE BELOW TO LINES TO BE PART OF THE updateCaptureStatus listener ***
         m_startStopCaptureButton.setText("START CAPTURE");
@@ -99,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
         // Add the settings to the intent
         screenCaptureIntent.putExtra("settings", m_settings);
         this.getApplicationContext().bindService(screenCaptureIntent, captureServiceConnection, 0);
+        Log.d(TAG, "Capture Service was bound");
         // Add the on-click events to the UI
         m_startStopCaptureButton.setOnClickListener((View view) ->
         {
@@ -150,32 +165,70 @@ public class MainActivity extends AppCompatActivity {
         });
         m_settingUseCellularButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
         {
-          @Override
-          public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-              m_settings.setString("useCellular", Boolean.toString(isChecked));
-          }
-      });
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                m_settings.setString("useCellular", Boolean.toString(isChecked));
+            }
+        });
     }
+
     // Loads an existing settings JSON file into a Settings object
     // OR creates a new JSON file in the settings folder, populates it, and loads it into a Settings object
     private void loadOrCreateSettings(){
+        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+        }
         boolean existed = true;
-        File jsonFile = new File(getApplicationContext().getExternalFilesDir(null).getAbsolutePath()
-                + "/settings/settings.JSON");
-        if (!jsonFile.exists())
-        {
-            existed = false;
+
+        // Get the directory path
+        File directory = new File(getApplicationContext().getExternalFilesDir(null), "/screenlife");
+
+        // Check if the directory path is not a file
+        if (directory.exists() && !directory.isDirectory()) {
+            throw new RuntimeException("Path is not a directory: " + directory.getAbsolutePath());
+        }
+
+        // Create the directory if it doesn't exist
+        if (!directory.exists()) {
+            if (!directory.mkdirs()) {
+                throw new RuntimeException("Failed to create directory: " + directory.getAbsolutePath());
+            } else {
+                Log.i(TAG, "Directory created: " + directory.getAbsolutePath());
+            }
+        } else {
+            Log.i(TAG, "Directory already exists: " + directory.getAbsolutePath());
+        }
+
+        // Create the file inside the directory
+        File jsonFile = new File(directory, "settings.JSON");
+
+        if (jsonFile.exists() && !jsonFile.isFile()) {
+            throw new RuntimeException("Path is not a file: " + jsonFile.getAbsolutePath());
+        }
+
+        // If the file doesn't exist, create it
+        if (!jsonFile.exists()) {
+            Log.i(TAG, "JSON file does not exist, creating a new one.");
             try {
-                jsonFile.createNewFile();
+                if (jsonFile.createNewFile()) {
+                    Log.i(TAG, "JSON file created: " + jsonFile.getAbsolutePath());
+                } else {
+                    Log.e(TAG, "Failed to create JSON file: " + jsonFile.getAbsolutePath());
+                }
             } catch (IOException e) {
+                Log.e(TAG, "Error creating JSON file", e);
                 throw new RuntimeException(e);
             }
+        } else {
+            Log.i(TAG, "JSON file already exists: " + jsonFile.getAbsolutePath());
         }
         // Create the settings
         m_settings = new Settings(jsonFile);
         // Populate an empty settings file
-        m_settings.setString("hash", "00000000");
-        m_settings.setString("useCellular", "true");
+        if (!existed) {
+            m_settings.setString("hash", "00000000");
+            m_settings.setString("useCellular", "true");
+        }
         // Save the new settings file
         m_settings.save();
     }

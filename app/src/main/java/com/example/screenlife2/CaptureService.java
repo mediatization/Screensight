@@ -18,7 +18,7 @@ import java.lang.reflect.Method;
 // When the app is terminated, the Service is as well
 // The app can send messages and receive answers from the service
 public class CaptureService extends Service {
-
+    private static final String TAG = "CaptureService";
     // The scheduler used to take screenshots
     private CaptureScheduler captureScheduler = null;
     // PLACEHOLDER
@@ -33,6 +33,7 @@ public class CaptureService extends Service {
         if (captureScheduler == null)
             captureScheduler = new CaptureScheduler(getApplicationContext(), settings);
         start();
+        Log.d(TAG, "Service was bound");
         return new LocalBinder();
     }
     public class LocalBinder extends Binder {
