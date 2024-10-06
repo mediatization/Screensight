@@ -33,10 +33,11 @@ import java.util.concurrent.ScheduledFuture;
 
 // Another version of the capture service that uses a ScheduledExecutorService
 public class CaptureScheduler {
+    private static final String TAG = "CaptureScheduler";
     public interface CaptureListener{
         void onInvoke(CaptureStatus status, int numCaptured);
     }
-    public CaptureScheduler (Context context, Settings settings){
+    public CaptureScheduler (Context context){
         m_context = context;
     }
     public enum CaptureStatus
@@ -55,16 +56,14 @@ public class CaptureScheduler {
     private ScheduledFuture<?> m_captureHandle = null;
     // The context of the application, needed for certain function calls.
     private Context m_context;
-    // The settings for the app
-    private Settings m_settings;
     // The image reader that allows us to take screenshots
     private ImageReader m_imageReader;
     // TODO: FIGURE OUT THIS AND WHERE TO GET IT, ALSO IMAGE READER???
     private KeyguardManager m_keyguardManager;
-    private int m_pixelStride;
-    private int m_rowPadding;
-    private int DISPLAY_WIDTH;
-    private int DISPLAY_HEIGHT;
+    private static int m_pixelStride;
+    private static int m_rowPadding;
+    private final int DISPLAY_WIDTH = 720;
+    private final int DISPLAY_HEIGHT = 1280;
     private static final DateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
     private HashSet<CaptureListener> m_onStatusChangedCallbacks = new HashSet<CaptureListener>();
 
@@ -83,6 +82,7 @@ public class CaptureScheduler {
     }
     // Schedules to start
     public void startCapture() {
+        Log.d(TAG, "Starting capture");
         stopCapture();
         insertResumeImage();
         Runnable captureRunner = this::takeCapture;
@@ -144,27 +144,34 @@ public class CaptureScheduler {
         encryptImage(bitmap, "pause");
     }
     private void encryptImage(Bitmap bitmap, String descriptor) {
-        String hash = m_settings.getString("hash", "00000000").substring(0, 8);
-        String keyRaw = m_settings.getString("key", "");
+        String hash = Settings.getString("hash", "00000000").substring(0, 8);
+        String keyRaw = Settings.getString("key", "");
         byte[] key = Converter.hexStringToByteArray(keyRaw);
         FileOutputStream fos = null;
         Date date = new Date();
-        String dir = m_context.getApplicationContext().getExternalFilesDir(null).getAbsolutePath();
+        String dir = m_context.getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + "/screenLife";
+        String dir2 = dir + "/images";
+        String dir3 = dir + "/encrypt";
         String screenshot = "/" + hash + "_" + sdf.format(date) + "_" + descriptor + ".png";
 
         try {
             if (keyRaw != "") {
-
-                fos = new FileOutputStream(dir + "/images" + screenshot);
+                // LOOK FOR screenLife DIRECTORY
+                Settings.findOrCreateDirectory(dir);
+                // LOOK FOR images DIRECTORY
+                Settings.findOrCreateDirectory(dir2);
+                // LOOK FOR encrypt DIRECTORY
+                Settings.findOrCreateDirectory(dir3);
+                // Create the file output stream
+                fos = new FileOutputStream(dir2 + screenshot);
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 70, fos);
                 try {
-                    Encryptor.encryptFile(key, screenshot, dir + "/images" + screenshot, dir +
-                            "/encrypt" + screenshot);
+                    Encryptor.encryptFile(key, screenshot, dir2 + screenshot, dir3 + screenshot);
                     Log.i("SLAZ", "Encryption done with key " + Arrays.toString(key));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                File f = new File(dir + "/images" + screenshot);
+                File f = new File(dir2 + screenshot);
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
