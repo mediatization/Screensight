@@ -29,9 +29,8 @@ public class CaptureService extends Service {
     // Required function for Services to bind
     @Override
     public IBinder onBind(Intent intent) {
-        Settings settings = (Settings)intent.getSerializableExtra("settings");
         if (captureScheduler == null)
-            captureScheduler = new CaptureScheduler(getApplicationContext(), settings);
+            captureScheduler = new CaptureScheduler(getApplicationContext());
         start();
         Log.d(TAG, "Service was bound");
         return new LocalBinder();

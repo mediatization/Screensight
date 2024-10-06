@@ -1,6 +1,7 @@
 package com.example.screenlife2;
 
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
@@ -38,9 +39,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView m_userKeyText;
     private ToggleButton m_settingUseCellularButton;
 
-    /** Data Members*/
-    private Settings m_settings = null;
-
     /** Service Members*/
     private CaptureService m_captureService = null;
     private final ServiceConnection captureServiceConnection = new ServiceConnection() {
@@ -49,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
             CaptureService.LocalBinder localBinder = (CaptureService.LocalBinder) iBinder;
             m_captureService = localBinder.getService();
             m_captureService.addCaptureListener(this::updateCaptureStatus);
+            Log.d(TAG, "Service Connected");
         }
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
@@ -101,8 +100,8 @@ public class MainActivity extends AppCompatActivity {
         loadOrCreateSettings();
         Log.d(TAG, "Settings were loaded");
         // Populate the settings
-        m_userKeyTextInput.setText(m_settings.getString("hash", "00000000"));
-        m_settingUseCellularButton.setChecked(Boolean.parseBoolean(m_settings.getString("useCellular", "")));
+        m_userKeyTextInput.setText(Settings.getString("hash", "00000000"));
+        m_settingUseCellularButton.setChecked(Boolean.parseBoolean(Settings.getString("useCellular", "")));
         Log.d(TAG, "Settings UI was updated");
         // Initialize the rest of the UI
         // TODO: CHANGE THE BELOW TO LINES TO BE PART OF THE updateCaptureStatus listener ***
@@ -110,9 +109,7 @@ public class MainActivity extends AppCompatActivity {
         m_resumePauseCaptureButton.setActivated(false);
         // Bind the capture service
         Intent screenCaptureIntent = new Intent(this, CaptureService.class);
-        // Add the settings to the intent
-        screenCaptureIntent.putExtra("settings", m_settings);
-        this.getApplicationContext().bindService(screenCaptureIntent, captureServiceConnection, 0);
+        bindService(screenCaptureIntent, captureServiceConnection, Context.BIND_AUTO_CREATE);
         Log.d(TAG, "Capture Service was bound");
         // Add the on-click events to the UI
         m_startStopCaptureButton.setOnClickListener((View view) ->
@@ -149,8 +146,11 @@ public class MainActivity extends AppCompatActivity {
         m_userKeySubmitButton.setOnClickListener((View view) ->
         {
             if(m_userKeyTextInput.length() == 8 && m_userKeyTextInput.getText() != null) {
-                m_settings.setString("hash", m_userKeyTextInput.getText().toString());
-                m_settings.save();
+                // Overwrite the hash and key in the settings
+                // TODO: DETERMINE CORRECT "KEY" VALUE
+                Settings.setString("hash", m_userKeyTextInput.getText().toString());
+                Settings.setString("key", "00000000000000000000000000000000");
+                Settings.save();
                 m_userKeyText.setText(m_userKeyTextInput.getText().toString());
                 m_userKeyTextInput.setActivated(false);
                 m_userKeySubmitButton.setActivated(false);
@@ -167,9 +167,17 @@ public class MainActivity extends AppCompatActivity {
         {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                m_settings.setString("useCellular", Boolean.toString(isChecked));
+                Settings.setString("useCellular", Boolean.toString(isChecked));
             }
         });
+    }
+    // Loads values into the user's settings file
+    private void overwriteSettings(String hash, String key, String useCellular)
+    {
+        Settings.setString("hash", "00000000");
+        Settings.setString("key", "00000000000000000000000000000000");
+        Settings.setString("useCellular", "false");
+        Settings.save();
     }
 
     // Loads an existing settings JSON file into a Settings object
@@ -222,14 +230,14 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Log.i(TAG, "JSON file already exists: " + jsonFile.getAbsolutePath());
         }
-        // Create the settings
-        m_settings = new Settings(jsonFile);
+        // Load the settings
+        Settings.load(jsonFile);
+
         // Populate an empty settings file
-        if (!existed) {
-            m_settings.setString("hash", "00000000");
-            m_settings.setString("useCellular", "true");
-        }
-        // Save the new settings file
-        m_settings.save();
+        // TODO: ADD MORE RIGOROUS CASES FOR CHECKING BROKEN SETTINGS
+        overwriteSettings(
+                "00000000",
+                "00000000000000000000000000000000",
+                "false");
     }
 }
