@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -74,7 +75,7 @@ public class CaptureScheduler {
     private final int DISPLAY_WIDTH = 720;
     private final int DISPLAY_HEIGHT = 1280;
     private static final DateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
-    private HashSet<CaptureListener> m_onStatusChangedCallbacks = new HashSet<CaptureListener>();
+    private ArrayList<CaptureListener> m_onStatusChangedCallbacks = new ArrayList<>();
 
     public CaptureScheduler (Context context, int screenDensity, int resultCode, Intent intent){
         m_context = context;
@@ -106,6 +107,7 @@ public class CaptureScheduler {
         m_onStatusChangedCallbacks.clear();
     }
     private void invokeListeners() {
+        Log.d(TAG, "Invoking listeners: " + m_onStatusChangedCallbacks.size());
         for(CaptureListener listener : m_onStatusChangedCallbacks)
         {
             listener.onInvoke(m_captureStatus, getNumCaptured());
@@ -130,6 +132,8 @@ public class CaptureScheduler {
         m_captureHandle.cancel(false);
         m_captureHandle = null;
         m_captureStatus = CaptureStatus.STOPPED;
+        // Invoke listeners
+        invokeListeners();
     }
     // Stops capture and schedules to start
     public void pauseCapture(){
@@ -137,6 +141,8 @@ public class CaptureScheduler {
         m_captureStatus = CaptureStatus.PAUSED;
         Runnable capturePauser = this::startCapture;
         m_captureHandle = m_scheduler.schedule(capturePauser, m_pauseDuration, MILLISECONDS);
+        // Invoke listeners
+        invokeListeners();
     }
     //
     private void takeCapture() {
@@ -234,11 +240,14 @@ public class CaptureScheduler {
             }
             bitmap.recycle();
         }
+        // Invoke the listeners
+        invokeListeners();
     }
     //
     public File[] getCaptures()
     {
-        String dir = m_context.getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + "/images";
+        // TODO: CONSIDER SAVING THESE PATHS IN CONSTANTS
+        String dir = m_context.getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + "/screenLife/encrypt";
         File directory = new File(dir);
         FileFilter filter = new FileFilter()
         {
@@ -247,7 +256,11 @@ public class CaptureScheduler {
                 return file.getName().endsWith(".png");
             }
         };
-        return directory.listFiles(filter);
+        Log.d(TAG, "Is " + dir + " a directory? " + directory.isDirectory());
+        File[] results = directory.listFiles(/*filter*/);
+        if (results == null)
+            results = new File[]{};
+        return results;
     }
     public int getNumCaptured(){
         return getCaptures().length;

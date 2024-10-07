@@ -49,6 +49,7 @@ class Encryptor {
         cos.flush();
         cos.close();
         fis.close();
+        System.out.println("ENCRYPTING FINISHED");
     }
 
     static private byte[] getSHA(String input)  throws NoSuchAlgorithmException {

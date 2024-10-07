@@ -51,8 +51,61 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             CaptureService.LocalBinder localBinder = (CaptureService.LocalBinder) iBinder;
             m_captureService = localBinder.getService();
-            m_captureService.addCaptureListener(this::updateCaptureStatus);
+            m_captureService.addCaptureListener((CaptureScheduler.CaptureStatus status, int numCaptured) -> updateCaptureStatus(status, numCaptured));
             Log.d(TAG, "Service Connected");
+            // Add the on-click events to the UI
+            m_startStopCaptureButton.setOnClickListener((View view) ->
+            {
+                if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.STOPPED) {
+                    m_captureService.start();
+                }
+                else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
+                    m_captureService.stop();
+                }
+                else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
+                    m_captureService.stop();
+                }
+            });
+            m_resumePauseCaptureButton.setOnClickListener((View view) ->
+            {
+                if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
+                    m_captureService.start();
+                }
+                else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
+                    m_captureService.pause();
+                }
+            });
+            m_userKeySubmitButton.setOnClickListener((View view) ->
+            {
+                if(m_userKeyTextInput.length() == 8 && m_userKeyTextInput.getText() != null) {
+                    // Overwrite the hash and key in the settings
+                    // TODO: DETERMINE CORRECT "KEY" VALUE
+                    Settings.setString("hash", m_userKeyTextInput.getText().toString());
+                    Settings.setString("key", "00000000000000000000000000000000");
+                    Settings.save();
+                    m_userKeyText.setText(m_userKeyTextInput.getText().toString());
+                    m_userKeyTextInput.setActivated(false);
+                    m_userKeySubmitButton.setActivated(false);
+                    m_userKeyEditButton.setActivated(true);
+                }
+            });
+            m_userKeyEditButton.setOnClickListener((View view) ->
+            {
+                m_userKeyTextInput.setActivated(true);
+                m_userKeySubmitButton.setActivated(true);
+                m_userKeyEditButton.setActivated(false);
+            });
+            m_settingUseCellularButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
+            {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    Settings.setString("useCellular", Boolean.toString(isChecked));
+                }
+            });
+            Log.d(TAG, "UI On clicks were added");
+            // Start the capturing
+            m_captureService.start();
+            Log.d(TAG, "Capture Service was started");
         }
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
@@ -61,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
 
         public void updateCaptureStatus(CaptureScheduler.CaptureStatus status, int numCaptured)
         {
+            Log.d(TAG, "Updating capture status");
             m_captureStatusText.setText(status.toString());
             m_numCapturedFilesText.setText(Integer.toString(numCaptured));
             switch(status)
@@ -131,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
         m_userKeyEditButton = findViewById(R.id.m_userKeyEditButton);
         m_userKeyText = findViewById(R.id.m_userKeyText);
         m_settingUseCellularButton = findViewById(R.id.m_settingUseCellularButton);
-        Log.d(TAG, "UI was set up");
+        Log.d(TAG, "UI was hooked up");
         // Try to grab the settings
         loadOrCreateSettings();
         Log.d(TAG, "Settings were loaded");
@@ -143,7 +197,7 @@ public class MainActivity extends AppCompatActivity {
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
         int screenDensity = metrics.densityDpi;
-        // Bind the capture service
+        // Set up the capture service
         Intent screenCaptureIntent = new Intent(this, CaptureService.class);
         screenCaptureIntent.putExtra("resultCode", resultCode);
         screenCaptureIntent.putExtra("intentData", data);
@@ -153,55 +207,6 @@ public class MainActivity extends AppCompatActivity {
         // Bind the service
         bindService(screenCaptureIntent, captureServiceConnection, Context.BIND_AUTO_CREATE);
         Log.d(TAG, "Capture Service was bound");
-        // Add the on-click events to the UI
-        m_startStopCaptureButton.setOnClickListener((View view) ->
-        {
-            if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.STOPPED) {
-                m_captureService.start();
-            }
-            else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
-                m_captureService.stop();
-            }
-            else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
-                m_captureService.stop();
-            }
-        });
-        m_resumePauseCaptureButton.setOnClickListener((View view) ->
-        {
-            if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
-                m_captureService.start();
-            }
-            else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
-                m_captureService.pause();
-            }
-        });
-        m_userKeySubmitButton.setOnClickListener((View view) ->
-        {
-            if(m_userKeyTextInput.length() == 8 && m_userKeyTextInput.getText() != null) {
-                // Overwrite the hash and key in the settings
-                // TODO: DETERMINE CORRECT "KEY" VALUE
-                Settings.setString("hash", m_userKeyTextInput.getText().toString());
-                Settings.setString("key", "00000000000000000000000000000000");
-                Settings.save();
-                m_userKeyText.setText(m_userKeyTextInput.getText().toString());
-                m_userKeyTextInput.setActivated(false);
-                m_userKeySubmitButton.setActivated(false);
-                m_userKeyEditButton.setActivated(true);
-            }
-        });
-        m_userKeyEditButton.setOnClickListener((View view) ->
-        {
-            m_userKeyTextInput.setActivated(true);
-            m_userKeySubmitButton.setActivated(true);
-            m_userKeyEditButton.setActivated(false);
-        });
-        m_settingUseCellularButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
-        {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                Settings.setString("useCellular", Boolean.toString(isChecked));
-            }
-        });
     }
     // Loads values into the user's settings file
     private void overwriteSettings(String hash, String key, String useCellular)

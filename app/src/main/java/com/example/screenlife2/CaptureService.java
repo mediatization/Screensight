@@ -80,8 +80,7 @@ public class CaptureService extends Service {
         Intent parceIntent = intent.getParcelableExtra("intentData");
         if (captureScheduler == null)
             captureScheduler = new CaptureScheduler(getApplicationContext(), screenDensity, resultCode, parceIntent);
-        start();
-        Log.d(TAG, "Service was bound");
+        Log.d(TAG, "Capture Service on bind was called");
         return new LocalBinder();
     }
     public class LocalBinder extends Binder {
