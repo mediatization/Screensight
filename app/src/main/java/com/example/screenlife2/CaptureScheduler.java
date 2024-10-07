@@ -39,7 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
-// Another version of the capture service that uses a ScheduledExecutorService
+// A scheduler which periodically takes captures
 public class CaptureScheduler {
     private static final String TAG = "CaptureScheduler";
     public interface CaptureListener{
@@ -83,6 +83,12 @@ public class CaptureScheduler {
         m_keyguardManager = getSystemService(context, KeyguardManager.class);
         m_imageReader = ImageReader.newInstance(DISPLAY_WIDTH, DISPLAY_HEIGHT,
                 PixelFormat.RGBA_8888, 5);
+        m_imageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+          @Override
+          public void onImageAvailable(ImageReader reader) {
+              Log.d(TAG, "An image is available");
+          }
+        }, null);
         m_mediaProjection = m_projectionManager.getMediaProjection(resultCode, intent);
         m_mediaProjectionCallback = new MediaProjectionCallback();
         m_mediaProjection.registerCallback(m_mediaProjectionCallback, null);
@@ -134,15 +140,24 @@ public class CaptureScheduler {
     }
     //
     private void takeCapture() {
-        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_FOREGROUND);
+        //android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_FOREGROUND);
         Log.d(TAG, "Taking a capture");
         if (!m_keyguardManager.isKeyguardLocked()) {
             Log.d(TAG, "Keyguard is unlocked");
+            // TODO: FIGURE OUT WHY THIS IS FAILING
+            //  SOMEHOW WE HAVE EITHER NO IMAGES OR TOO MANY IMAGES
+            //  MAYBE THE VIRTUAL DISPLAY ISN'T FEEDING IMAGES IN FAST ENOUGH?
+            //  INCREASING THE CAPTURE INTERVAL DID NOT HELP
+            //  IT LOOKS LIKE IT ONLY FINDS A NEW IMAGE WHEN THE PICTURE CHANGES
             Image image = m_imageReader.acquireLatestImage();
             Log.d(TAG, "Took an image");
+            Log.d(TAG, "Max images " + m_imageReader.getMaxImages());
+            if (image == null) {
+                Log.d(TAG, "Image was null, canceling capture...");
+                return;
+            }
             Image.Plane[] planes = image.getPlanes();
             Log.d(TAG, "Got planes");
-            // TODO: BELOW LINE CAUSES AN ERROR
             ByteBuffer buffer = planes[0].getBuffer();
             Log.d(TAG, "Got a buffer");
             m_pixelStride = planes[0].getPixelStride();
