@@ -7,10 +7,6 @@ import java.io.File;
 //probably an inefficient data type to be using
 import java.util.List;
 
-
-//need to find out if there are plans on how we should upload the files
-
-/*
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -72,7 +68,7 @@ public class Batch {
             e.printStackTrace();
         }
 
-        //turning our response into aa code
+        //turning our response into aa code (need to refactor)
         int code = response != null ? response.code() : 999;
         //checking the range of the code
         if (code >= 400  && code < 500) {
@@ -95,4 +91,3 @@ public class Batch {
     }
 
 }
- */
