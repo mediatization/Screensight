@@ -6,18 +6,22 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 import android.Manifest;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
@@ -25,7 +29,8 @@ import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-
+    private static final int REQUEST_CODE_MEDIA = 1000;
+    public MediaProjectionManager m_projectionManager;
     /** UI Members */
     private Button m_startStopCaptureButton;
     private Button m_resumePauseCaptureButton;
@@ -62,27 +67,58 @@ public class MainActivity extends AppCompatActivity {
             {
                 case CAPTURING:
                     m_captureStatusText.setTextColor(Color.GREEN);
+                    m_startStopCaptureButton.setText("STOP CAPTURE");
+                    m_resumePauseCaptureButton.setText("PAUSE CAPTURE");
+                    m_resumePauseCaptureButton.setActivated(true);
                     break;
                 case STOPPED:
                     m_captureStatusText.setTextColor(Color.RED);
+                    m_startStopCaptureButton.setText("START CAPTURE");
+                    m_resumePauseCaptureButton.setText("CAN'T PAUSE/RESUME");
+                    m_resumePauseCaptureButton.setActivated(false);
                     break;
                 case PAUSED:
                     m_captureStatusText.setTextColor(Color.YELLOW);
+                    m_startStopCaptureButton.setText("STOP CAPTURE");
+                    m_resumePauseCaptureButton.setText("RESUME CAPTURE");
+                    m_resumePauseCaptureButton.setActivated(true);
                     break;
             }
         }
     };
-
-
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        startMediaProjectionRequest();
         super.onCreate(savedInstanceState);
         // Load the UI layout from res/layout/activity_main.xml
         setContentView(R.layout.activity_main);
 
         // Log message indicating that the UI is being displayed
         Log.d(TAG, "Activity Created");
+    }
 
+    private void startMediaProjectionRequest() {
+        m_projectionManager =
+                (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+        startActivityForResult(m_projectionManager.createScreenCaptureIntent(), REQUEST_CODE_MEDIA);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_CODE_MEDIA) {
+            Log.e(TAG, "Unknown request code: " + requestCode);
+            Toast.makeText(getApplicationContext(), "Unknown request code: " + requestCode,
+                    Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        if (resultCode != RESULT_OK) {
+            // Mark not recording in UI
+            Toast.makeText(getApplicationContext(), "Permission denied", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
         // Set up UI
         m_startStopCaptureButton = findViewById(R.id.m_startStopCaptureButton);
         m_resumePauseCaptureButton = findViewById(R.id.m_resumePauseCaptureButton);
@@ -103,12 +139,18 @@ public class MainActivity extends AppCompatActivity {
         m_userKeyTextInput.setText(Settings.getString("hash", "00000000"));
         m_settingUseCellularButton.setChecked(Boolean.parseBoolean(Settings.getString("useCellular", "")));
         Log.d(TAG, "Settings UI was updated");
-        // Initialize the rest of the UI
-        // TODO: CHANGE THE BELOW TO LINES TO BE PART OF THE updateCaptureStatus listener ***
-        m_startStopCaptureButton.setText("START CAPTURE");
-        m_resumePauseCaptureButton.setActivated(false);
+        // Get screen density
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        int screenDensity = metrics.densityDpi;
         // Bind the capture service
         Intent screenCaptureIntent = new Intent(this, CaptureService.class);
+        screenCaptureIntent.putExtra("resultCode", resultCode);
+        screenCaptureIntent.putExtra("intentData", data);
+        screenCaptureIntent.putExtra("screenDensity", screenDensity);
+        // Start the service
+        startService(screenCaptureIntent);
+        // Bind the service
         bindService(screenCaptureIntent, captureServiceConnection, Context.BIND_AUTO_CREATE);
         Log.d(TAG, "Capture Service was bound");
         // Add the on-click events to the UI
@@ -116,31 +158,21 @@ public class MainActivity extends AppCompatActivity {
         {
             if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.STOPPED) {
                 m_captureService.start();
-                m_startStopCaptureButton.setText("STOP CAPTURE");
-                m_resumePauseCaptureButton.setActivated(true);
             }
             else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
                 m_captureService.stop();
-                m_startStopCaptureButton.setText("START CAPTURE");
-                m_resumePauseCaptureButton.setActivated(false);
             }
             else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
                 m_captureService.stop();
-                m_startStopCaptureButton.setText("START CAPTURE");
-                m_resumePauseCaptureButton.setActivated(false);
             }
         });
         m_resumePauseCaptureButton.setOnClickListener((View view) ->
         {
             if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
                 m_captureService.start();
-                m_startStopCaptureButton.setText("STOP CAPTURE");
-                m_resumePauseCaptureButton.setText("PAUSE CAPTURE");
             }
             else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
                 m_captureService.pause();
-                m_startStopCaptureButton.setText("STOP CAPTURE");
-                m_resumePauseCaptureButton.setText("RESUME CAPTURE");
             }
         });
         m_userKeySubmitButton.setOnClickListener((View view) ->

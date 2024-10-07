@@ -1,14 +1,22 @@
 package com.example.screenlife2;
 
+import static androidx.core.content.ContextCompat.getSystemService;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import android.app.KeyguardManager;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.content.Context;
+import android.graphics.ImageFormat;
 import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.hardware.display.DisplayManager;
+import android.hardware.display.VirtualDisplay;
 import android.media.Image;
 import android.media.ImageReader;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
 import android.util.Log;
 
 import java.io.File;
@@ -37,9 +45,6 @@ public class CaptureScheduler {
     public interface CaptureListener{
         void onInvoke(CaptureStatus status, int numCaptured);
     }
-    public CaptureScheduler (Context context){
-        m_context = context;
-    }
     public enum CaptureStatus
     {
         STOPPED,
@@ -56,16 +61,36 @@ public class CaptureScheduler {
     private ScheduledFuture<?> m_captureHandle = null;
     // The context of the application, needed for certain function calls.
     private Context m_context;
+    private MediaProjection m_mediaProjection;
+    private MediaProjectionManager m_projectionManager;
+    private MediaProjectionCallback m_mediaProjectionCallback;
     // The image reader that allows us to take screenshots
     private ImageReader m_imageReader;
-    // TODO: FIGURE OUT THIS AND WHERE TO GET IT, ALSO IMAGE READER???
     private KeyguardManager m_keyguardManager;
+    private VirtualDisplay m_virtualDisplay;
+    private static int m_screenDensity;
     private static int m_pixelStride;
     private static int m_rowPadding;
     private final int DISPLAY_WIDTH = 720;
     private final int DISPLAY_HEIGHT = 1280;
     private static final DateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
     private HashSet<CaptureListener> m_onStatusChangedCallbacks = new HashSet<CaptureListener>();
+
+    public CaptureScheduler (Context context, int screenDensity, int resultCode, Intent intent){
+        m_context = context;
+        m_screenDensity = screenDensity;
+        m_projectionManager = getSystemService(context, MediaProjectionManager.class);
+        m_keyguardManager = getSystemService(context, KeyguardManager.class);
+        m_imageReader = ImageReader.newInstance(DISPLAY_WIDTH, DISPLAY_HEIGHT,
+                PixelFormat.RGBA_8888, 5);
+        m_mediaProjection = m_projectionManager.getMediaProjection(resultCode, intent);
+        m_mediaProjectionCallback = new MediaProjectionCallback();
+        m_mediaProjection.registerCallback(m_mediaProjectionCallback, null);
+        m_virtualDisplay = m_mediaProjection.createVirtualDisplay(TAG, DISPLAY_WIDTH,
+                DISPLAY_HEIGHT, m_screenDensity,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, m_imageReader.getSurface(),
+                null, null);
+    }
 
     // Adds listeners when the status changes
     public void addListener(CaptureListener listener){
@@ -109,29 +134,39 @@ public class CaptureScheduler {
     }
     //
     private void takeCapture() {
-        //android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
+        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_FOREGROUND);
+        Log.d(TAG, "Taking a capture");
         if (!m_keyguardManager.isKeyguardLocked()) {
-
-            //System.out.println("CAPTURE:INTERVAL:2");
-
+            Log.d(TAG, "Keyguard is unlocked");
             Image image = m_imageReader.acquireLatestImage();
+            Log.d(TAG, "Took an image");
             Image.Plane[] planes = image.getPlanes();
+            Log.d(TAG, "Got planes");
+            // TODO: BELOW LINE CAUSES AN ERROR
             ByteBuffer buffer = planes[0].getBuffer();
+            Log.d(TAG, "Got a buffer");
             m_pixelStride = planes[0].getPixelStride();
             int rowStride = planes[0].getRowStride();
             m_rowPadding = rowStride - m_pixelStride * DISPLAY_WIDTH;
+            Log.d(TAG, "Got image vars");
             image.close();
+            Log.d(TAG, "Closed an image");
 
             Bitmap bitmap = Bitmap.createBitmap(DISPLAY_WIDTH + m_rowPadding / m_pixelStride,
                     DISPLAY_HEIGHT, Bitmap.Config.ARGB_8888);
+            Log.d(TAG, "Created a bitmap");
             bitmap.copyPixelsFromBuffer(buffer);
+            Log.d(TAG, "Copied buffer to bitmap");
             encryptImage(bitmap, "placeholder");
+            Log.d(TAG, "Encrypted an image");
             buffer.rewind();
+            Log.d(TAG, "Took a capture");
         }
     }
     private void insertResumeImage()
     {
         //android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
+        Log.d(TAG, "Inserting resume image");
         InputStream is = m_context.getResources().openRawResource(R.raw.resumerecord);
         Bitmap bitmap = BitmapFactory.decodeStream(is);
         encryptImage(bitmap, "resume");
@@ -139,6 +174,7 @@ public class CaptureScheduler {
     private void insertPauseImage()
     {
         //android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
+        Log.d(TAG, "Inserting pause image");
         InputStream is = m_context.getResources().openRawResource(R.raw.pauserecord);
         Bitmap bitmap = BitmapFactory.decodeStream(is);
         encryptImage(bitmap, "pause");
@@ -167,7 +203,7 @@ public class CaptureScheduler {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 70, fos);
                 try {
                     Encryptor.encryptFile(key, screenshot, dir2 + screenshot, dir3 + screenshot);
-                    Log.i("SLAZ", "Encryption done with key " + Arrays.toString(key));
+                    Log.d(TAG, "Encryption done with key " + Arrays.toString(key));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -202,4 +238,18 @@ public class CaptureScheduler {
         return getCaptures().length;
     }
     public CaptureStatus getCaptureStatus() { return m_captureStatus; }
+
+    // Called when Screen Cast is disabled
+    private class MediaProjectionCallback extends MediaProjection.Callback {
+        @Override
+        public void onStop() {
+            Log.e(TAG, "I'm stopped");
+            try {
+                //destroyImageReader();
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
 }

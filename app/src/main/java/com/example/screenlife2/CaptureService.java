@@ -1,13 +1,19 @@
 package com.example.screenlife2;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.media.projection.MediaProjection;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -17,20 +23,63 @@ import java.lang.reflect.Method;
 // The Service is bound to an app, the one running in the background
 // When the app is terminated, the Service is as well
 // The app can send messages and receive answers from the service
+// This service is bound and a foreground service
 public class CaptureService extends Service {
     private static final String TAG = "CaptureService";
+    private static final String CHANNEL_ID = "ForegroundServiceChannel";
+    private static final int NOTIFICATION_ID = 1;
     // The scheduler used to take screenshots
     private CaptureScheduler captureScheduler = null;
-    // PLACEHOLDER
+    // Create is called first
     @Override
     public void onCreate(){
         // Do nothing
     }
-    // Required function for Services to bind
+    // Then we should call start service
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        // Start the foreground service
+        startForegroundService();
+        return START_NOT_STICKY;
+    }
+
+    private void startForegroundService() {
+        // Create a notification channel for Android 8.0 and higher
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Foreground Service Channel",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
+
+        // Create a notification for the foreground service
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
+
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Foreground Service")
+                .setContentText("The service is running in the foreground")
+                .setSmallIcon(R.drawable.ic_launcher_background)  // Add an icon for the notification
+                .setContentIntent(pendingIntent)
+                .build();
+
+        // Start the service in the foreground with the notification
+        startForeground(NOTIFICATION_ID, notification);
+    }
+
+    // Required function for Services to bind, call this after start
     @Override
     public IBinder onBind(Intent intent) {
+        int screenDensity = intent.getIntExtra("screenDensity", 0);
+        int resultCode = intent.getIntExtra("resultCode", -1);
+        Intent parceIntent = intent.getParcelableExtra("intentData");
         if (captureScheduler == null)
-            captureScheduler = new CaptureScheduler(getApplicationContext());
+            captureScheduler = new CaptureScheduler(getApplicationContext(), screenDensity, resultCode, parceIntent);
         start();
         Log.d(TAG, "Service was bound");
         return new LocalBinder();
@@ -45,6 +94,7 @@ public class CaptureService extends Service {
     @Override
     public void onDestroy(){
         captureScheduler.stopCapture();
+        super.onDestroy();
     }
     /** Methods for the client */
 
