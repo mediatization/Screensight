@@ -10,6 +10,7 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
@@ -21,6 +22,10 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 import android.Manifest;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -51,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             CaptureService.LocalBinder localBinder = (CaptureService.LocalBinder) iBinder;
             m_captureService = localBinder.getService();
-            m_captureService.addCaptureListener((CaptureScheduler.CaptureStatus status, int numCaptured) -> updateCaptureStatus(status, numCaptured));
+            m_captureService.addCaptureListener(this::updateCaptureStatus);
             Log.d(TAG, "Service Connected");
             // Add the on-click events to the UI
             m_startStopCaptureButton.setOnClickListener((View view) ->
@@ -114,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
 
         public void updateCaptureStatus(CaptureScheduler.CaptureStatus status, int numCaptured)
         {
-            Log.d(TAG, "Updating capture status");
+            Log.d(TAG, "Updating capture status to " + status.toString());
             m_captureStatusText.setText(status.toString());
             m_numCapturedFilesText.setText(Integer.toString(numCaptured));
             switch(status)
@@ -142,7 +147,12 @@ public class MainActivity extends AppCompatActivity {
     };
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        // Request notifications
+        startNotificationRequest();
+        // Request media projection
+        m_projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
         startMediaProjectionRequest();
+        // Create
         super.onCreate(savedInstanceState);
         // Load the UI layout from res/layout/activity_main.xml
         setContentView(R.layout.activity_main);
@@ -151,28 +161,82 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "Activity Created");
     }
 
-    private void startMediaProjectionRequest() {
-        m_projectionManager =
-                (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        startActivityForResult(m_projectionManager.createScreenCaptureIntent(), REQUEST_CODE_MEDIA);
+    // Register a launcher for the permission request
+    private final ActivityResultLauncher<String> requestNotificationLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    // Permission is granted
+                    Toast.makeText(MainActivity.this, "Notification Permission Granted", Toast.LENGTH_SHORT).show();
+                } else {
+                    // Permission denied
+                    Toast.makeText(MainActivity.this, "Notification Permission Denied", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+    // Register a launcher for the permission request
+    private final ActivityResultLauncher<Intent> requestMediaProjectionLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        // Permission granted
+                        Toast.makeText(MainActivity.this, "Media Projection Permission Granted", Toast.LENGTH_SHORT).show();
+                        // Now you can start the screen capture
+                        onResult(result, getIntent());
+                        // mediaProjectionManager.getMediaProjection(result.getResultCode(), result.getData());
+                    } else {
+                        // Permission denied
+                        Toast.makeText(MainActivity.this, "Media Projection Permission Denied", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+
+
+    private void startNotificationRequest() {
+        // Only required for Android 13 (API level 33) and higher
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                // Permission is already granted
+                Toast.makeText(MainActivity.this, "Notification Permission Already Granted", Toast.LENGTH_SHORT).show();
+            } else if (shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)) {
+                // Show rationale and request permission
+                Toast.makeText(MainActivity.this, "Notification Permission is required for showing notifications.", Toast.LENGTH_SHORT).show();
+                requestNotificationLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
+            } else {
+                // Request the permission directly
+                requestNotificationLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != REQUEST_CODE_MEDIA) {
-            Log.e(TAG, "Unknown request code: " + requestCode);
-            Toast.makeText(getApplicationContext(), "Unknown request code: " + requestCode,
+    private void startMediaProjectionRequest() {
+        // Create an intent for the media projection permission
+        if (m_projectionManager != null) {
+            Intent intent = m_projectionManager.createScreenCaptureIntent();
+            // Launch the intent using the ActivityResultLauncher
+            requestMediaProjectionLauncher.launch(intent);
+        }
+    }
+
+    public void onResult(ActivityResult result, Intent intent)
+    {
+        /*
+        if (result.getResultCode() != REQUEST_CODE_MEDIA) {
+            Log.e(TAG, "Unknown request code: " + result.getResultCode());
+            Toast.makeText(getApplicationContext(), "Unknown request code: " + result.getResultCode(),
                     Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
-        if (resultCode != RESULT_OK) {
+        if (result.getResultCode() != RESULT_OK) {
             // Mark not recording in UI
             Toast.makeText(getApplicationContext(), "Permission denied", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
+        */
+        Log.d(TAG, "Calling onResult");
         // Set up UI
         m_startStopCaptureButton = findViewById(R.id.m_startStopCaptureButton);
         m_resumePauseCaptureButton = findViewById(R.id.m_resumePauseCaptureButton);
@@ -198,16 +262,20 @@ public class MainActivity extends AppCompatActivity {
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
         int screenDensity = metrics.densityDpi;
         // Set up the capture service
-        Intent screenCaptureIntent = new Intent(this, CaptureService.class);
-        screenCaptureIntent.putExtra("resultCode", resultCode);
-        screenCaptureIntent.putExtra("intentData", data);
+        Intent screenCaptureIntent = new Intent(MainActivity.this, CaptureService.class);
+        screenCaptureIntent.putExtra("resultCode", result.getResultCode());
+        screenCaptureIntent.putExtra("intentData", result.getData());
         screenCaptureIntent.putExtra("screenDensity", screenDensity);
         // Start the service
-        startService(screenCaptureIntent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Log.d(TAG, "Calling startForegroundService");
+            startForegroundService(screenCaptureIntent);
+        }
         // Bind the service
         bindService(screenCaptureIntent, captureServiceConnection, Context.BIND_AUTO_CREATE);
         Log.d(TAG, "Capture Service was bound");
     }
+
     // Loads values into the user's settings file
     private void overwriteSettings(String hash, String key, String useCellular)
     {

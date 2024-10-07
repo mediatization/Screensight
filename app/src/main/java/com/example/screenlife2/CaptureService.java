@@ -5,12 +5,16 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -38,12 +42,6 @@ public class CaptureService extends Service {
     // Then we should call start service
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // Start the foreground service
-        startForegroundService();
-        return START_NOT_STICKY;
-    }
-
-    private void startForegroundService() {
         // Create a notification channel for Android 8.0 and higher
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -70,6 +68,7 @@ public class CaptureService extends Service {
 
         // Start the service in the foreground with the notification
         startForeground(NOTIFICATION_ID, notification);
+        return Service.START_NOT_STICKY;
     }
 
     // Required function for Services to bind, call this after start

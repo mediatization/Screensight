@@ -8,8 +8,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.content.Context;
-import android.graphics.ImageFormat;
-import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
@@ -17,6 +15,7 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
+import android.os.PowerManager;
 import android.util.Log;
 
 import java.io.File;
@@ -25,17 +24,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -182,6 +176,10 @@ public class CaptureScheduler {
             Log.d(TAG, "Encrypted an image");
             buffer.rewind();
             Log.d(TAG, "Took a capture");
+            // Invoke the listeners
+            // TODO: INVOKE LISTENERS IS CAUSING AN ISSUE HERE
+            //  WE STILL NEED THIS THOUGH
+            //invokeListeners();
         }
     }
     private void insertResumeImage()
@@ -240,8 +238,6 @@ public class CaptureScheduler {
             }
             bitmap.recycle();
         }
-        // Invoke the listeners
-        invokeListeners();
     }
     //
     public File[] getCaptures()
@@ -256,7 +252,7 @@ public class CaptureScheduler {
                 return file.getName().endsWith(".png");
             }
         };
-        Log.d(TAG, "Is " + dir + " a directory? " + directory.isDirectory());
+        //Log.d(TAG, "Is " + dir + " a directory? " + directory.isDirectory());
         File[] results = directory.listFiles(/*filter*/);
         if (results == null)
             results = new File[]{};
