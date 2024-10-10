@@ -145,6 +145,60 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
+    private UploadService m_uploadService = null;
+    private final ServiceConnection uploadServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            UploadService.LocalBinder localBinder = (UploadService.LocalBinder) iBinder;
+            m_uploadService = localBinder.getService();
+            m_uploadService.addUploadListener(this::updateUploadStatus);
+            Log.d(TAG, "Service Connected");
+            m_uploadButton.setOnClickListener((View view) ->
+            {
+                if(m_uploadService.getUploadStatus() != UploadScheduler.UploadStatus.UPLOADING) {
+                    m_uploadService.start();
+                }
+                else {
+                    m_uploadService.stop();
+                }
+            });
+        };
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            m_uploadService = null;
+        };
+
+        public void updateUploadStatus(UploadScheduler.UploadStatus status) {
+            Log.d(TAG, "Updating capture status to " + status.toString());
+            m_captureStatusText.setText(status.toString());
+            switch(status)
+            {
+                case IDLE:
+                    m_captureStatusText.setTextColor(Color.GREEN);
+                    m_uploadButton.setText("START UPLOAD");
+                    m_uploadButton.setActivated(false);
+                    break;
+                case UPLOADING:
+                    m_captureStatusText.setTextColor(Color.BLACK);
+                    m_uploadButton.setText("STOP UPLOAD");
+                    m_uploadButton.setActivated(true);
+                    break;
+                case SUCCESS:
+                    m_captureStatusText.setTextColor(Color.YELLOW);
+                    m_uploadButton.setText("UPLOAD AGAIN");
+                    m_uploadButton.setActivated(false);
+                    break;
+                case FAILED:
+                    m_captureStatusText.setTextColor(Color.RED);
+                    m_uploadButton.setText("UPLOAD FAILED");
+                    m_uploadButton.setActivated(false);
+                    break;
+            }
+        };
+    };
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         // Request notifications
@@ -273,7 +327,20 @@ public class MainActivity extends AppCompatActivity {
         }
         // Bind the service
         bindService(screenCaptureIntent, captureServiceConnection, Context.BIND_AUTO_CREATE);
+
         Log.d(TAG, "Capture Service was bound");
+
+        // Set up the upload service
+        Intent uploadIntent = new Intent(MainActivity.this, UploadService.class);
+        // Start the service
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Log.d(TAG, "Calling startForegroundService");
+            startForegroundService(uploadIntent);
+        }
+        // Bind the service
+        bindService(screenCaptureIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE);
+
+        Log.d(TAG, "Upload Service was bound");
     }
 
     // Loads values into the user's settings file

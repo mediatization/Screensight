@@ -20,7 +20,7 @@ public class UploadService extends Service {
         if (uploadScheduler == null)
             uploadScheduler = new UploadScheduler(getApplicationContext());
         start();
-        Log.d(TAG, "Service was bound");
+        Log.d(TAG, "Capture Service on bind was called");
         return new UploadService.LocalBinder();
     }
 
@@ -28,6 +28,10 @@ public class UploadService extends Service {
         public UploadService getService() {
             return UploadService.this;
         }
+    }
+
+    public void addUploadListener(UploadScheduler.UploadListener listener){
+        uploadScheduler.addListener(listener);
     }
 
     public void start(){uploadScheduler.startUpload();}

@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -24,6 +25,9 @@ import okhttp3.OkHttpClient;
 // run asynchronously
 public class UploadScheduler {
     private static final String TAG = "UploadScheduler";
+    public interface UploadListener{
+        void onInvoke(UploadScheduler.UploadStatus status);
+    }
     public enum UploadStatus
     {
         IDLE,
@@ -44,6 +48,8 @@ public class UploadScheduler {
     // The context of the application, needed for certain function calls.
     private Context m_context;
 
+    private ArrayList<UploadScheduler.UploadListener> m_onStatusChangedCallbacks = new ArrayList<>();
+
     // The scheduler
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     // The current runnable task of the scheduler
@@ -51,6 +57,21 @@ public class UploadScheduler {
 
     public UploadScheduler(Context c) {
         m_context = c;
+    }
+
+    // Adds listeners when the status changes
+    public void addListener(UploadScheduler.UploadListener listener){
+        m_onStatusChangedCallbacks.add(listener);
+    }
+    public void clearListeners(){
+        m_onStatusChangedCallbacks.clear();
+    }
+    private void invokeListeners() {
+        Log.d(TAG, "Invoking listeners: " + m_onStatusChangedCallbacks.size());
+        for(UploadScheduler.UploadListener listener : m_onStatusChangedCallbacks)
+        {
+            listener.onInvoke(uploadStatus);
+        }
     }
 
     // Schedules to start
@@ -83,17 +104,17 @@ public class UploadScheduler {
         //converting the files into a more iteration friendly datastructure
         LinkedList<File> fileList = new LinkedList<>(Arrays.asList(files));
 
-        //datastructure to keep track of all the batches we make
-        List<Batch> batches = new ArrayList<>();
+        //updating our upload status
+        uploadStatus = UploadStatus.UPLOADING;
 
-        //split our list of files into batches
+        //split our list of files into batches and uploading them
         while (!fileList.isEmpty()) {
             //creating a list of files for a single batch
             List<File> nextBatch = new LinkedList<>();
 
             //iterating through our list of files adding them to our nextBatch list while
             //ensuring that we do not send to many in one batch and that the file list does not run out
-            for (int i = 0; i < 10  && !fileList.isEmpty(); i++) {
+            for (int i = 0; i < Constants.BATCH_SIZE  && !fileList.isEmpty(); i++) {
                 nextBatch.add(fileList.remove());
             }
 
@@ -102,15 +123,6 @@ public class UploadScheduler {
 
             //creating a new batch with our list of files and adding it to our array of batches
             Batch batch = new Batch(nextBatch, client);
-            batches.add(batch);
-        }
-
-        //updating our upload status
-        uploadStatus = UploadStatus.UPLOADING;
-
-        //can definitely just refactor into above while loop, too tired right now
-        //should ask about necessity of doing as background task, seems like a lot of extra work
-        for(Batch batch : batches) {
             String code = batch.sendFiles();
             if (code.equals("201")) {
                 batch.deleteFiles();
