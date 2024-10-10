@@ -179,7 +179,7 @@ public class CaptureScheduler {
             // Invoke the listeners
             // TODO: INVOKE LISTENERS IS CAUSING AN ISSUE HERE
             //  WE STILL NEED THIS THOUGH
-            //invokeListeners();
+            invokeListeners();
         }
     }
     private void insertResumeImage()

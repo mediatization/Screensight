@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
+    private boolean m_isActivityVisible = true;
     private static final String TAG = "MainActivity";
     private static final int REQUEST_CODE_MEDIA = 1000;
     public MediaProjectionManager m_projectionManager;
@@ -108,6 +109,9 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
             Log.d(TAG, "UI On clicks were added");
+            // TODO: MAYBE PUT VISIBLITY SETTING HERE ***
+            // Set visible TEMPORARILY
+            m_isActivityVisible = true;
             // Start the capturing
             m_captureService.start();
             Log.d(TAG, "Capture Service was started");
@@ -120,29 +124,36 @@ public class MainActivity extends AppCompatActivity {
         public void updateCaptureStatus(CaptureScheduler.CaptureStatus status, int numCaptured)
         {
             Log.d(TAG, "Updating capture status to " + status.toString());
+            Log.d(TAG, "Is activity active? " + Boolean.toString(m_isActivityVisible));
+            /*
+            if (!m_isActivityVisible)
+                return;
+
             m_captureStatusText.setText(status.toString());
             m_numCapturedFilesText.setText(Integer.toString(numCaptured));
-            switch(status)
-            {
+
+            switch(status) {
                 case CAPTURING:
                     m_captureStatusText.setTextColor(Color.GREEN);
                     m_startStopCaptureButton.setText("STOP CAPTURE");
                     m_resumePauseCaptureButton.setText("PAUSE CAPTURE");
-                    m_resumePauseCaptureButton.setActivated(true);
+                    //m_resumePauseCaptureButton.setActivated(true);
                     break;
                 case STOPPED:
                     m_captureStatusText.setTextColor(Color.RED);
                     m_startStopCaptureButton.setText("START CAPTURE");
                     m_resumePauseCaptureButton.setText("CAN'T PAUSE/RESUME");
-                    m_resumePauseCaptureButton.setActivated(false);
+                    //m_resumePauseCaptureButton.setActivated(false);
                     break;
                 case PAUSED:
                     m_captureStatusText.setTextColor(Color.YELLOW);
                     m_startStopCaptureButton.setText("STOP CAPTURE");
                     m_resumePauseCaptureButton.setText("RESUME CAPTURE");
-                    m_resumePauseCaptureButton.setActivated(true);
+                    //m_resumePauseCaptureButton.setActivated(true);
                     break;
             }
+
+             */
         }
     };
 
@@ -171,33 +182,50 @@ public class MainActivity extends AppCompatActivity {
         };
 
         public void updateUploadStatus(UploadScheduler.UploadStatus status) {
-            Log.d(TAG, "Updating capture status to " + status.toString());
-            m_captureStatusText.setText(status.toString());
+            Log.d(TAG, "Updating upload status to " + status.toString());
+            /*
+            if (!m_isActivityVisible)
+                return;
+            m_uploadStatusText.setText(status.toString());
             switch(status)
             {
                 case IDLE:
-                    m_captureStatusText.setTextColor(Color.GREEN);
+                    m_uploadStatusText.setTextColor(Color.GREEN);
                     m_uploadButton.setText("START UPLOAD");
                     m_uploadButton.setActivated(false);
                     break;
                 case UPLOADING:
-                    m_captureStatusText.setTextColor(Color.BLACK);
+                    m_uploadStatusText.setTextColor(Color.BLACK);
                     m_uploadButton.setText("STOP UPLOAD");
                     m_uploadButton.setActivated(true);
                     break;
                 case SUCCESS:
-                    m_captureStatusText.setTextColor(Color.YELLOW);
+                    m_uploadStatusText.setTextColor(Color.YELLOW);
                     m_uploadButton.setText("UPLOAD AGAIN");
                     m_uploadButton.setActivated(false);
                     break;
                 case FAILED:
-                    m_captureStatusText.setTextColor(Color.RED);
+                    m_uploadStatusText.setTextColor(Color.RED);
                     m_uploadButton.setText("UPLOAD FAILED");
                     m_uploadButton.setActivated(false);
                     break;
             }
+
+             */
         };
     };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        m_isActivityVisible = true; // Activity is visible
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        m_isActivityVisible = false; // Activity is not visible
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -338,7 +366,7 @@ public class MainActivity extends AppCompatActivity {
             startForegroundService(uploadIntent);
         }
         // Bind the service
-        bindService(screenCaptureIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE);
+        bindService(uploadIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE);
 
         Log.d(TAG, "Upload Service was bound");
     }
