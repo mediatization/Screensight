@@ -79,7 +79,8 @@ public class UploadScheduler {
         stopUpload();
         Runnable uploadRunner = this::uploadImages;
         //may not make sense to have it be a constantly scheduled thing?
-        uploadHandle = scheduler.scheduleWithFixedDelay(uploadRunner, uploadInterval, uploadInterval, TimeUnit.MINUTES);
+        Log.d(TAG, "Upload scheduler is attempting first upload");
+        uploadHandle = scheduler.scheduleWithFixedDelay(uploadRunner, 0, uploadInterval, TimeUnit.MINUTES);
         uploadStatus = UploadStatus.UPLOADING;
     }
 
@@ -95,7 +96,8 @@ public class UploadScheduler {
 
     //looks like we are no longer doing intent stuff, will have to ask about that
     public void uploadImages() {
-        //either pass in the context from main activities or ask logan how to set up a listener
+
+        Log.d(TAG, "Upload service is attempting to access file directory");
 
         //getting directory of where files are stored and making a list
         File dir = m_context.getExternalFilesDir(null);
@@ -106,6 +108,8 @@ public class UploadScheduler {
 
         //updating our upload status
         uploadStatus = UploadStatus.UPLOADING;
+
+        Log.d(TAG, "Upload service is now uploading");
 
         //split our list of files into batches and uploading them
         while (!fileList.isEmpty()) {
@@ -131,6 +135,8 @@ public class UploadScheduler {
                 uploadStatus = UploadStatus.FAILED;
                 break;
             }
+
+            Log.d(TAG, "Upload service has sent a batch of: " + nextBatch.size());
         }
 
         //updating uploadStatus
