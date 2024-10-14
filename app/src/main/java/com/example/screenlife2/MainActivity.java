@@ -10,8 +10,6 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.PowerManager;
-import android.os.strictmode.WebViewMethodCalledOnWrongThreadViolation;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
