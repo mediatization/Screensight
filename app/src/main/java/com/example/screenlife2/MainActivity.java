@@ -323,21 +323,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void onResult(ActivityResult result, Intent intent)
     {
-        /*
-        if (result.getResultCode() != REQUEST_CODE_MEDIA) {
-            Log.e(TAG, "Unknown request code: " + result.getResultCode());
-            Toast.makeText(getApplicationContext(), "Unknown request code: " + result.getResultCode(),
-                    Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-        if (result.getResultCode() != RESULT_OK) {
-            // Mark not recording in UI
-            Toast.makeText(getApplicationContext(), "Permission denied", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-        */
         Log.d(TAG, "Calling onResult");
         // Set up UI
         m_startStopCaptureButton = findViewById(R.id.m_startStopCaptureButton);
