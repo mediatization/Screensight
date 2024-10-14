@@ -44,6 +44,7 @@ public class CaptureService extends Service {
     // Then we should call start service
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "Capture Service On Start was called");
         // Create a notification channel for Android 8.0 and higher
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -62,7 +63,7 @@ public class CaptureService extends Service {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Foreground Service")
+                .setContentTitle("Capture Service")
                 .setContentText("The service is running in the foreground")
                 .setSmallIcon(R.drawable.ic_launcher_background)  // Add an icon for the notification
                 .setContentIntent(pendingIntent)
