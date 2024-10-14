@@ -1,6 +1,8 @@
 package com.example.screenlife2;
 
 
+import android.util.Log;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -18,18 +20,19 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 class Encryptor {
+    private static final String TAG = "Encryptor";
     static void encryptFile(byte[] key, String filename, String inPath, String outPath) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
         FileInputStream fis = new FileInputStream(inPath);
         FileOutputStream fos = new FileOutputStream(outPath);
 
         // Grab the first 10 chars of the filename
         String fname = filename.substring(10);
-        System.out.println("ENCRYPTING WITH FNAME " + fname);
+        Log.d(TAG, "ENCRYPTING WITH FNAME " + fname);
         // Get 8 bytes from an encrypted version of fname, using SHA-256
         byte[] ivBytes = Arrays.copyOfRange(getSHA(fname), 0, 7);
 
-        System.out.println("ENCRYPTING WITH KEY " + toHex(key));
-        System.out.println("ENCRYPTING WITH IV " + toHex(ivBytes));
+        Log.d(TAG, "ENCRYPTING WITH KEY " + toHex(key));
+        Log.d(TAG, "ENCRYPTING WITH IV " + toHex(ivBytes));
 
         // Create a secret key spec using the key and AES/GCM/NoPadding algorithm
         SecretKeySpec secretKeySpec = new SecretKeySpec(key,"AES/GCM/NoPadding");
@@ -49,7 +52,7 @@ class Encryptor {
         cos.flush();
         cos.close();
         fis.close();
-        System.out.println("ENCRYPTING FINISHED");
+        Log.d(TAG, "ENCRYPTING FINISHED");
     }
 
     static private byte[] getSHA(String input)  throws NoSuchAlgorithmException {
