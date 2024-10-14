@@ -108,7 +108,7 @@ public class UploadScheduler {
         //updating our upload status
         uploadStatus = UploadStatus.UPLOADING;
 
-        Log.d(TAG, "Upload service is now uploading");
+        Log.d(TAG, "Upload service has found " + fileList.size() +  " files to upload");
 
         //split our list of files into batches and uploading them
         while (!fileList.isEmpty()) {
@@ -130,12 +130,13 @@ public class UploadScheduler {
             if (code.equals("201")) {
                 batch.deleteFiles();
             } else {
-                System.err.println("Batches failed to send");
+                Log.d(TAG, "Batch failed to send");
                 uploadStatus = UploadStatus.FAILED;
                 break;
             }
 
-            Log.d(TAG, "Upload service has sent a batch of: " + nextBatch.size());
+            if(uploadStatus != UploadStatus.FAILED)
+                Log.d(TAG, "Upload service has sent a batch of: " + nextBatch.size());
         }
 
         //updating uploadStatus

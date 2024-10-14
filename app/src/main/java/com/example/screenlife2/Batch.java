@@ -1,6 +1,6 @@
 package com.example.screenlife2;
 
-//import com.screenomics.Constants;
+import android.util.Log;
 
 import java.io.File;
 
@@ -17,6 +17,8 @@ import okhttp3.Response;
 
 //class for sending a batch of files all at once
 public class Batch {
+
+    private static final String TAG = "Batch";
 
     private final MediaType PNG = MediaType.parse("image/*");
 
@@ -55,6 +57,8 @@ public class Batch {
                 .post(body)
                 .build();
 
+        Log.d(TAG, "Sending request: " + request.toString());
+
         //initiating variable to store response from client
         Response response = null;
         try {
@@ -63,16 +67,16 @@ public class Batch {
             //sending the upload request and storing the response
             response = client.newCall(request).execute();
             //printing out how long upload too to our console
-            System.out.println("Upload of " + files.size() + " files took " + (System.nanoTime() - startTime)/1000000 + "ms");
+            Log.d(TAG, "Upload of " + files.size() + " files took " + (System.nanoTime() - startTime)/1000000 + "ms");
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        //turning our response into aa code (need to refactor)
+        //turning our response into a code (need to refactor)
         int code = response != null ? response.code() : 999;
         //checking the range of the code
         if (code >= 400  && code < 500) {
-            System.out.println(response.toString());
+            Log.d(TAG, response.toString());
         }
         //closing the connection if we got a response
         if (response != null) response.close();
