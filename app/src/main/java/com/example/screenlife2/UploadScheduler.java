@@ -119,6 +119,7 @@ public class UploadScheduler {
             //ensuring that we do not send to many in one batch and that the file list does not run out
             for (int i = 0; i < Constants.BATCH_SIZE  && !fileList.isEmpty(); i++) {
                 nextBatch.add(fileList.remove());
+                Log.d(TAG, "Adding file: " + nextBatch.get(nextBatch.size()-1).toString() + "to batch");
             }
 
             //unsure what client does so leaving this as a method variable for the time being

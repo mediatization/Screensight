@@ -43,6 +43,7 @@ public class Batch {
 
         //iterating through all our files and checking their validity
         //if the file corresponds to an actual image then we add it to the packet
+        //.create is depreceated, need to look into
         for (int i = 0; i < files.size(); i++) {
             if (files.get(i).isFile()) {
                 bodyPart.addFormDataPart("file" + (i + 1), files.get(i).getName(), RequestBody.create(PNG, files.get(i)));
