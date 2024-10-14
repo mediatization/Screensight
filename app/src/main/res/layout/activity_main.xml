@@ -8,8 +8,9 @@
     tools:context=".MainActivity">
 
     <LinearLayout
-        android:layout_width="410dp"
-        android:layout_height="734dp"
+        android:id="@+id/linearLayout"
+        android:layout_width="420dp"
+        android:layout_height="727dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
@@ -18,8 +19,10 @@
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.645"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.457">
 
         <TextView
             android:id="@+id/m_userKeyText"
@@ -93,5 +96,19 @@
             android:textOff="WAIT FOR WIFI"
             android:textOn="USE CELLULAR" />
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/m_blackOutPanel"
+        android:layout_width="418dp"
+        android:layout_height="734dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/linearLayout"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@android:drawable/screen_background_dark" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

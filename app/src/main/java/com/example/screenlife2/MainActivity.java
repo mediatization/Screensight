@@ -6,9 +6,11 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.media.projection.MediaProjectionConfig;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -16,6 +18,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -37,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int AUTO_UPLOAD_COUNT = 500;
     public MediaProjectionManager m_projectionManager;
     /** UI Members */
+    private ImageView m_blackOutPanel;
     private Button m_startStopCaptureButton;
     private Button m_resumePauseCaptureButton;
     private Button m_uploadButton;
@@ -151,6 +155,8 @@ public class MainActivity extends AppCompatActivity {
                             Log.d(TAG, "UC ERROR ERROR ERROR!!!");
                             break;
                     }
+                    // Disable the black out panel
+                    m_blackOutPanel.setVisibility(View.INVISIBLE);
                 }
             });
         }
@@ -274,7 +280,9 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Notification Permission Granted", Toast.LENGTH_SHORT).show();
                 } else {
                     // Permission denied
-                    Toast.makeText(MainActivity.this, "Notification Permission Denied", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Permission Denied. Closing...", Toast.LENGTH_SHORT).show();
+                    // Close the app
+                    closeApp();
                 }
             });
 
@@ -289,10 +297,11 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(MainActivity.this, "Media Projection Permission Granted", Toast.LENGTH_SHORT).show();
                         // Now you can start the screen capture
                         onResult(result, getIntent());
-                        // mediaProjectionManager.getMediaProjection(result.getResultCode(), result.getData());
                     } else {
                         // Permission denied
-                        Toast.makeText(MainActivity.this, "Media Projection Permission Denied", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Permission Denied. Closing...", Toast.LENGTH_SHORT).show();
+                        // Close the app
+                        closeApp();
                     }
                 }
             });
@@ -318,16 +327,35 @@ public class MainActivity extends AppCompatActivity {
     private void startMediaProjectionRequest() {
         // Create an intent for the media projection permission
         if (m_projectionManager != null) {
-            Intent intent = m_projectionManager.createScreenCaptureIntent();
+            Intent intent = null;
+            // Ask specifically for full screen projecting
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                intent = m_projectionManager.createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay());
+            }
+            else{
+                intent = m_projectionManager.createScreenCaptureIntent();
+            }
             // Launch the intent using the ActivityResultLauncher
             requestMediaProjectionLauncher.launch(intent);
         }
+    }
+
+    private void closeApp(){
+        // Delay the closing to let the user see the message
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                // Close the app
+                finishAffinity(); // Closes the app and all activities in the task
+            }
+        }, 2000); // 2-second delay to allow the user to read the message
     }
 
     public void onResult(ActivityResult result, Intent intent)
     {
         Log.d(TAG, "Calling onResult");
         // Set up UI
+        m_blackOutPanel = findViewById(R.id.m_blackOutPanel);
         m_startStopCaptureButton = findViewById(R.id.m_startStopCaptureButton);
         m_resumePauseCaptureButton = findViewById(R.id.m_resumePauseCaptureButton);
         m_uploadButton = findViewById(R.id.m_uploadButton);
