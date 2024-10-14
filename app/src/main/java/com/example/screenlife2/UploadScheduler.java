@@ -94,7 +94,6 @@ public class UploadScheduler {
         uploadStatus = UploadStatus.IDLE;
     }
 
-    //looks like we are no longer doing intent stuff, will have to ask about that
     public void uploadImages() {
 
         Log.d(TAG, "Upload service is attempting to access file directory");

@@ -183,37 +183,41 @@ public class MainActivity extends AppCompatActivity {
         };
 
         public void updateUploadStatus(UploadScheduler.UploadStatus status) {
-            Log.d(TAG, "Updating upload status to " + status.toString());
-            /*
-            if (!m_isActivityVisible)
-                return;
-            m_uploadStatusText.setText(status.toString());
-            switch(status)
-            {
-                case IDLE:
-                    m_uploadStatusText.setTextColor(Color.GREEN);
-                    m_uploadButton.setText("START UPLOAD");
-                    m_uploadButton..setVisibility(View.VISIBLE);
-                    break;
-                case UPLOADING:
-                    m_uploadStatusText.setTextColor(Color.BLACK);
-                    m_uploadButton.setText("STOP UPLOAD");
-                    m_uploadButton..setVisibility(View.VISIBLE);
-                    break;
-                case SUCCESS:
-                    m_uploadStatusText.setTextColor(Color.YELLOW);
-                    m_uploadButton.setText("UPLOAD AGAIN");
-                    m_uploadButton..setVisibility(View.VISIBLE);
-                    break;
-                case FAILED:
-                    m_uploadStatusText.setTextColor(Color.RED);
-                    m_uploadButton.setText("UPLOAD FAILED");
-                    m_uploadButton..setVisibility(View.VISIBLE);
-                    break;
-            }
 
-             */
-        };
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "Updating upload status to " + status.toString());
+                    Log.d(TAG, "Is activity active? " + Boolean.toString(m_isActivityVisible));
+
+                    if (!m_isActivityVisible)
+                        return;
+                    m_uploadStatusText.setText(status.toString());
+                    switch (status) {
+                        case IDLE:
+                            m_uploadStatusText.setTextColor(Color.GREEN);
+                            m_uploadButton.setText("START UPLOAD");
+                            m_uploadButton.setVisibility(View.VISIBLE);
+                            break;
+                        case UPLOADING:
+                            m_uploadStatusText.setTextColor(Color.BLACK);
+                            m_uploadButton.setText("STOP UPLOAD");
+                            m_uploadButton.setVisibility(View.VISIBLE);
+                            break;
+                        case SUCCESS:
+                            m_uploadStatusText.setTextColor(Color.YELLOW);
+                            m_uploadButton.setText("UPLOAD AGAIN");
+                            m_uploadButton.setVisibility(View.VISIBLE);
+                            break;
+                        case FAILED:
+                            m_uploadStatusText.setTextColor(Color.RED);
+                            m_uploadButton.setText("UPLOAD FAILED");
+                            m_uploadButton.setVisibility(View.VISIBLE);
+                            break;
+                    }
+                }
+            });
+        }
     };
     @Override
     protected void onStart(){
