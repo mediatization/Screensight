@@ -99,7 +99,8 @@ public class UploadScheduler {
         Log.d(TAG, "Upload service is attempting to access file directory");
 
         //getting directory of where files are stored and making a list
-        File dir = m_context.getExternalFilesDir(null);
+        String dirString = m_context.getExternalFilesDir(null) + "/screenLife" + "/encrypt";
+        File dir = new File(dirString);
         //need to check for null files
         File[] files = dir.listFiles();
         //converting the files into a more iteration friendly datastructure
