@@ -46,7 +46,7 @@ public class Batch {
         //.create is depreceated, need to look into
         for (int i = 0; i < files.size(); i++) {
             if (files.get(i).isFile()) {
-                bodyPart.addFormDataPart("file" + (i + 1), files.get(i).getName(), RequestBody.create(PNG, files.get(i)));
+                bodyPart.addFormDataPart("file" + (i + 1), files.get(i).getName(), RequestBody.create(files.get(i), PNG));
             }
         }
 
