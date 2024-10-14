@@ -82,6 +82,8 @@ public class UploadScheduler {
         Log.d(TAG, "Upload scheduler is attempting first upload");
         uploadHandle = scheduler.scheduleWithFixedDelay(uploadRunner, 0, uploadInterval, TimeUnit.MINUTES);
         uploadStatus = UploadStatus.UPLOADING;
+        // Invoke listeners
+        invokeListeners();
     }
 
     // Stops uploading of images
@@ -92,6 +94,13 @@ public class UploadScheduler {
         uploadHandle.cancel(false);
         uploadHandle = null;
         uploadStatus = UploadStatus.IDLE;
+        // Invoke listeners
+        invokeListeners();
+    }
+
+    public void updateUpload(){
+        // Invoke listeners
+        invokeListeners();
     }
 
     public void uploadImages() {
@@ -108,6 +117,8 @@ public class UploadScheduler {
 
         //updating our upload status
         uploadStatus = UploadStatus.UPLOADING;
+        // Invoke listeners
+        invokeListeners();
 
         Log.d(TAG, "Upload service has found " + fileList.size() +  " files to upload");
 
@@ -144,6 +155,8 @@ public class UploadScheduler {
         //updating uploadStatus
         if(uploadStatus != UploadStatus.FAILED) uploadStatus = UploadStatus.SUCCESS;
 
+        // Invoke listeners
+        invokeListeners();
     }
 
     public UploadStatus getUploadStatus() { return uploadStatus; }

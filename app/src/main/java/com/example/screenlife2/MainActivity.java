@@ -238,6 +238,9 @@ public class MainActivity extends AppCompatActivity {
         else if (m_captureService != null) {
             m_captureService.update();
         }
+        if(m_uploadService != null) {
+            m_uploadService.update();
+        }
     }
 
     @Override

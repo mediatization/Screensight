@@ -81,6 +81,7 @@ public class UploadService extends Service {
     }
 
     public void start(){uploadScheduler.startUpload();}
+    public void update() {uploadScheduler.updateUpload();}
     public void stop() {uploadScheduler.stopUpload();}
     public UploadScheduler.UploadStatus getUploadStatus() {return uploadScheduler.getUploadStatus();}
 }
