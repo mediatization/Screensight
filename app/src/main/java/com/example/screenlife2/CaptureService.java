@@ -119,6 +119,8 @@ public class CaptureService extends Service {
     public void stop(){
         captureScheduler.stopCapture();
     }
+    // Updates any listeners
+    public void update() { captureScheduler.updateCapture(); }
     // Returns captured files
     public File[] getFiles(){
         return captureScheduler.getCaptures();

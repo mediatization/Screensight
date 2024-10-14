@@ -138,6 +138,10 @@ public class CaptureScheduler {
         // Invoke listeners
         invokeListeners();
     }
+    public void updateCapture(){
+        // Invoke listeners
+        invokeListeners();
+    }
     //
     private void takeCapture() {
         //android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_FOREGROUND);

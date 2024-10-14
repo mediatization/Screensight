@@ -36,7 +36,7 @@ import java.io.IOException;
 public class MainActivity extends AppCompatActivity {
     private boolean m_isActivityVisible = false;
     private static final String TAG = "MainActivity";
-    private static final int REQUEST_CODE_MEDIA = 1000;
+    private static final int AUTO_UPLOAD_COUNT = 500;
     public MediaProjectionManager m_projectionManager;
     /** UI Members */
     private Button m_startStopCaptureButton;
@@ -65,11 +65,9 @@ public class MainActivity extends AppCompatActivity {
             {
                 if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.STOPPED) {
                     m_captureService.start();
-                }
-                else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
+                } else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
                     m_captureService.stop();
-                }
-                else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
+                } else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
                     m_captureService.stop();
                 }
             });
@@ -77,14 +75,13 @@ public class MainActivity extends AppCompatActivity {
             {
                 if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
                     m_captureService.start();
-                }
-                else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
+                } else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
                     m_captureService.pause();
                 }
             });
             m_userKeySubmitButton.setOnClickListener((View view) ->
             {
-                if(m_userKeyTextInput.length() == 8 && m_userKeyTextInput.getText() != null) {
+                if (m_userKeyTextInput.length() == 8 && m_userKeyTextInput.getText() != null) {
                     // Overwrite the hash and key in the settings
                     // TODO: DETERMINE CORRECT "KEY" VALUE
                     Settings.setString("hash", m_userKeyTextInput.getText().toString());
@@ -102,8 +99,7 @@ public class MainActivity extends AppCompatActivity {
                 m_userKeySubmitButton.setActivated(true);
                 m_userKeyEditButton.setActivated(false);
             });
-            m_settingUseCellularButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
-            {
+            m_settingUseCellularButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     Settings.setString("useCellular", Boolean.toString(isChecked));
@@ -111,13 +107,13 @@ public class MainActivity extends AppCompatActivity {
             });
             Log.d(TAG, "UI On clicks were added");
         }
+
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
             m_captureService = null;
         }
 
-        public void updateCaptureStatus(CaptureScheduler.CaptureStatus status, int numCaptured)
-        {
+        public void updateCaptureStatus(CaptureScheduler.CaptureStatus status, int numCaptured) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -130,12 +126,16 @@ public class MainActivity extends AppCompatActivity {
                     m_captureStatusText.setText(status.toString());
                     m_numCapturedFilesText.setText(Integer.toString(numCaptured));
 
-                    switch(status) {
+                    switch (status) {
                         case CAPTURING:
                             m_captureStatusText.setTextColor(Color.GREEN);
                             m_startStopCaptureButton.setText("STOP CAPTURE");
                             m_resumePauseCaptureButton.setText("PAUSE CAPTURE");
                             m_resumePauseCaptureButton.setVisibility(View.VISIBLE);
+                            // Check to upload
+                            if (numCaptured >= AUTO_UPLOAD_COUNT && m_uploadService.getUploadStatus() != UploadScheduler.UploadStatus.UPLOADING){
+                                m_uploadService.start();
+                            }
                             break;
                         case STOPPED:
                             m_captureStatusText.setTextColor(Color.RED);
@@ -232,6 +232,9 @@ public class MainActivity extends AppCompatActivity {
             // Start the capturing
             m_captureService.start();
             Log.d(TAG, "Capture Service was started");
+        }
+        else if (m_captureService != null) {
+            m_captureService.update();
         }
     }
 
