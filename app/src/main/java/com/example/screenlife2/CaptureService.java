@@ -34,6 +34,8 @@ public class CaptureService extends Service {
     private static final int NOTIFICATION_ID = 1;
     // The scheduler used to take screenshots
     private CaptureScheduler captureScheduler = null;
+    // Whether the service has been started at least once
+    public boolean Initialized = false;
     // Create is called first
     @Override
     public void onCreate(){
@@ -106,6 +108,7 @@ public class CaptureService extends Service {
     }
     // Starts capturing
     public void start(){
+        Initialized = true;
         captureScheduler.startCapture();
     }
     // Pauses capturing

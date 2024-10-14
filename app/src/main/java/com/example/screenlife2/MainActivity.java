@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.strictmode.WebViewMethodCalledOnWrongThreadViolation;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
@@ -33,7 +34,7 @@ import java.io.File;
 import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
-    private boolean m_isActivityVisible = true;
+    private boolean m_isActivityVisible = false;
     private static final String TAG = "MainActivity";
     private static final int REQUEST_CODE_MEDIA = 1000;
     public MediaProjectionManager m_projectionManager;
@@ -109,12 +110,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
             Log.d(TAG, "UI On clicks were added");
-            // TODO: MAYBE PUT VISIBLITY SETTING HERE ***
-            // Set visible TEMPORARILY
-            m_isActivityVisible = true;
-            // Start the capturing
-            m_captureService.start();
-            Log.d(TAG, "Capture Service was started");
         }
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
@@ -123,37 +118,43 @@ public class MainActivity extends AppCompatActivity {
 
         public void updateCaptureStatus(CaptureScheduler.CaptureStatus status, int numCaptured)
         {
-            Log.d(TAG, "Updating capture status to " + status.toString());
-            Log.d(TAG, "Is activity active? " + Boolean.toString(m_isActivityVisible));
-            /*
-            if (!m_isActivityVisible)
-                return;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "Updating capture status to " + status.toString());
+                    Log.d(TAG, "Is activity active? " + Boolean.toString(m_isActivityVisible));
 
-            m_captureStatusText.setText(status.toString());
-            m_numCapturedFilesText.setText(Integer.toString(numCaptured));
+                    if (!m_isActivityVisible)
+                        return;
 
-            switch(status) {
-                case CAPTURING:
-                    m_captureStatusText.setTextColor(Color.GREEN);
-                    m_startStopCaptureButton.setText("STOP CAPTURE");
-                    m_resumePauseCaptureButton.setText("PAUSE CAPTURE");
-                    //m_resumePauseCaptureButton.setActivated(true);
-                    break;
-                case STOPPED:
-                    m_captureStatusText.setTextColor(Color.RED);
-                    m_startStopCaptureButton.setText("START CAPTURE");
-                    m_resumePauseCaptureButton.setText("CAN'T PAUSE/RESUME");
-                    //m_resumePauseCaptureButton.setActivated(false);
-                    break;
-                case PAUSED:
-                    m_captureStatusText.setTextColor(Color.YELLOW);
-                    m_startStopCaptureButton.setText("STOP CAPTURE");
-                    m_resumePauseCaptureButton.setText("RESUME CAPTURE");
-                    //m_resumePauseCaptureButton.setActivated(true);
-                    break;
-            }
+                    m_captureStatusText.setText(status.toString());
+                    m_numCapturedFilesText.setText(Integer.toString(numCaptured));
 
-             */
+                    switch(status) {
+                        case CAPTURING:
+                            m_captureStatusText.setTextColor(Color.GREEN);
+                            m_startStopCaptureButton.setText("STOP CAPTURE");
+                            m_resumePauseCaptureButton.setText("PAUSE CAPTURE");
+                            m_resumePauseCaptureButton.setVisibility(View.VISIBLE);
+                            break;
+                        case STOPPED:
+                            m_captureStatusText.setTextColor(Color.RED);
+                            m_startStopCaptureButton.setText("START CAPTURE");
+                            m_resumePauseCaptureButton.setText("CAN'T PAUSE/RESUME");
+                            m_resumePauseCaptureButton.setVisibility(View.INVISIBLE);
+                            break;
+                        case PAUSED:
+                            m_captureStatusText.setTextColor(Color.YELLOW);
+                            m_startStopCaptureButton.setText("STOP CAPTURE");
+                            m_resumePauseCaptureButton.setText("RESUME CAPTURE");
+                            m_resumePauseCaptureButton.setVisibility(View.VISIBLE);
+                            break;
+                        default:
+                            Log.d(TAG, "UC ERROR ERROR ERROR!!!");
+                            break;
+                    }
+                }
+            });
         }
     };
 
@@ -192,39 +193,53 @@ public class MainActivity extends AppCompatActivity {
                 case IDLE:
                     m_uploadStatusText.setTextColor(Color.GREEN);
                     m_uploadButton.setText("START UPLOAD");
-                    m_uploadButton.setActivated(false);
+                    m_uploadButton..setVisibility(View.VISIBLE);
                     break;
                 case UPLOADING:
                     m_uploadStatusText.setTextColor(Color.BLACK);
                     m_uploadButton.setText("STOP UPLOAD");
-                    m_uploadButton.setActivated(true);
+                    m_uploadButton..setVisibility(View.VISIBLE);
                     break;
                 case SUCCESS:
                     m_uploadStatusText.setTextColor(Color.YELLOW);
                     m_uploadButton.setText("UPLOAD AGAIN");
-                    m_uploadButton.setActivated(false);
+                    m_uploadButton..setVisibility(View.VISIBLE);
                     break;
                 case FAILED:
                     m_uploadStatusText.setTextColor(Color.RED);
                     m_uploadButton.setText("UPLOAD FAILED");
-                    m_uploadButton.setActivated(false);
+                    m_uploadButton..setVisibility(View.VISIBLE);
                     break;
             }
 
              */
         };
     };
-
+    @Override
+    protected void onStart(){
+        super.onStart();
+        m_isActivityVisible = true; // Activity is visible
+        Log.d(TAG, "Activity Started");
+    }
     @Override
     protected void onResume() {
         super.onResume();
         m_isActivityVisible = true; // Activity is visible
+        Log.d(TAG, "Activity Resumed");
+        // Only start the capture service when it is active
+        if (m_captureService != null && !m_captureService.Initialized)
+        {
+            // Start the capturing
+            m_captureService.start();
+            Log.d(TAG, "Capture Service was started");
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         m_isActivityVisible = false; // Activity is not visible
+        Log.d(TAG, "Activity Paused");
     }
 
     @Override
