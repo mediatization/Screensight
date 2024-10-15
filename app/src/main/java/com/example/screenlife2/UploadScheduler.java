@@ -1,8 +1,15 @@
 package com.example.screenlife2;
 
+import static androidx.core.content.ContextCompat.getSystemService;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.preference.PreferenceManager;
@@ -26,24 +33,29 @@ import okhttp3.OkHttpClient;
 public class UploadScheduler {
     private static final String TAG = "UploadScheduler";
     public interface UploadListener{
-        void onInvoke(UploadScheduler.UploadStatus status);
+        void onInvoke(UploadScheduler.UploadStatus uploadStatus, UploadScheduler.UploadResult uploadResult);
     }
     public enum UploadStatus
     {
         IDLE,
-        UPLOADING,
-        FAILED,
-        SUCCESS
+        UPLOADING
+    }
+    public enum UploadResult
+    {
+        NO_UPLOADS,
+        SUCCESS,
+        WIFI_FAILURE,
+        NETWORK_FAILURE
     }
     private UploadStatus uploadStatus = UploadStatus.IDLE;
+    private UploadResult uploadResult = UploadResult.NO_UPLOADS;
 
     //interval between attempted uploads in minutes
     //could probably be turned into a const?
-    private final long uploadInterval = 60;
 
     //For keeping track of if we are connected to wifi
     //will need to figure out how to update this
-    private boolean wifiConnection = false;
+    private boolean wifiRequired = true;
 
     // The context of the application, needed for certain function calls.
     private Context m_context;
@@ -70,17 +82,40 @@ public class UploadScheduler {
         Log.d(TAG, "Invoking listeners: " + m_onStatusChangedCallbacks.size());
         for(UploadScheduler.UploadListener listener : m_onStatusChangedCallbacks)
         {
-            listener.onInvoke(uploadStatus);
+            listener.onInvoke(uploadStatus, uploadResult);
         }
     }
 
-    // Schedules to start
+    //stolen directly from stack overflow
+    //if it does not work its not my fault :)
+    private boolean checkWifiOnAndConnected() {
+        WifiManager wifiMgr = (WifiManager) m_context.getSystemService(Context.WIFI_SERVICE);
+
+        if (wifiMgr.isWifiEnabled()) { // Wi-Fi adapter is ON
+            WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
+
+            // Checking if connected to an access point
+            return wifiInfo.getNetworkId() != -1;
+        }
+        else {
+            return false; // Wi-Fi adapter is OFF
+        }
+    }
+
+    //will upload all files currently in directory
     public void startUpload() {
         stopUpload();
+
+        if(wifiRequired && !checkWifiOnAndConnected()) {
+            uploadResult = UploadResult.WIFI_FAILURE;
+            // Invoke listeners
+            invokeListeners();
+            return;
+        }
+
         Runnable uploadRunner = this::uploadImages;
-        //may not make sense to have it be a constantly scheduled thing?
         Log.d(TAG, "Upload scheduler is attempting first upload");
-        uploadHandle = scheduler.scheduleWithFixedDelay(uploadRunner, 0, uploadInterval, TimeUnit.MINUTES);
+        uploadHandle = scheduler.schedule(uploadRunner, 0, TimeUnit.MINUTES);
         uploadStatus = UploadStatus.UPLOADING;
         // Invoke listeners
         invokeListeners();
@@ -90,7 +125,6 @@ public class UploadScheduler {
     public void stopUpload(){
         if (uploadHandle == null)
             return;
-        //insertPauseImage();
         uploadHandle.cancel(false);
         uploadHandle = null;
         uploadStatus = UploadStatus.IDLE;
@@ -104,15 +138,13 @@ public class UploadScheduler {
     }
 
     public void uploadImages() {
-
-        Log.d(TAG, "Upload service is attempting to access file directory");
-
         //getting directory of where files are stored and making a list
         String dirString = m_context.getExternalFilesDir(null) + "/screenLife" + "/encrypt";
         File dir = new File(dirString);
         //need to check for null files
         File[] files = dir.listFiles();
         //converting the files into a more iteration friendly datastructure
+        //i dont know if list is optimal or how much performance we losing using a list
         LinkedList<File> fileList = new LinkedList<>(Arrays.asList(files));
 
         //updating our upload status
@@ -120,7 +152,7 @@ public class UploadScheduler {
         // Invoke listeners
         invokeListeners();
 
-        Log.d(TAG, "Upload service has found " + fileList.size() +  " files to upload");
+        Log.d(TAG, "Found " + fileList.size() +  " files to upload");
 
         //split our list of files into batches and uploading them
         while (!fileList.isEmpty()) {
@@ -137,28 +169,33 @@ public class UploadScheduler {
             //unsure what client does so leaving this as a method variable for the time being
             OkHttpClient client = new OkHttpClient.Builder().readTimeout(10, TimeUnit.SECONDS).build();
 
-            //creating a new batch with our list of files and adding it to our array of batches
+            //creating a new batch with our list of files
             Batch batch = new Batch(nextBatch, client);
+            //Sending the files and getting our return code
             String code = batch.sendFiles();
+            //on success delete the files
             if (code.equals("201")) {
                 batch.deleteFiles();
             } else {
+                //on failure notify user and stop the loop
                 Log.d(TAG, "Batch failed to send");
-                uploadStatus = UploadStatus.FAILED;
+                uploadResult = UploadResult.NETWORK_FAILURE;
                 break;
             }
 
-            if(uploadStatus != UploadStatus.FAILED)
+            if(uploadResult != UploadResult.NETWORK_FAILURE)
                 Log.d(TAG, "Upload service has sent a batch of: " + nextBatch.size());
         }
 
         //updating uploadStatus
-        if(uploadStatus != UploadStatus.FAILED) uploadStatus = UploadStatus.SUCCESS;
+        if(uploadResult != UploadResult.NETWORK_FAILURE) uploadResult = UploadResult.SUCCESS;
 
-        // Invoke listeners
-        invokeListeners();
+        //stopping upload
+        //no need to invoke listeners as stopUpload does that for us
+        this.stopUpload();
     }
 
-    public UploadStatus getUploadStatus() { return uploadStatus; }
-
+    public UploadStatus getUploadStatus() {return uploadStatus;}
+    public UploadResult getUploadResult() {return uploadResult;}
+    public void setWifiRequirement(boolean b) {wifiRequired = b;}
 }
