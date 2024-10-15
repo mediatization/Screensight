@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView m_captureStatusText;
     private TextView m_numCapturedFilesText;
     private TextView m_uploadStatusText;
+    private TextView m_uploadResultText;
     private EditText m_userKeyTextInput;
     private Button m_userKeySubmitButton;
     private Button m_userKeyEditButton;
@@ -135,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
                             m_resumePauseCaptureButton.setText("PAUSE CAPTURE");
                             m_resumePauseCaptureButton.setVisibility(View.VISIBLE);
                             // Check to upload
-                            if (numCaptured >= AUTO_UPLOAD_COUNT && m_uploadService.getUploadStatus() != UploadScheduler.UploadStatus.UPLOADING){
+                            if (numCaptured >= Constants.AUTO_UPLOAD_COUNT && m_uploadService.getUploadStatus() != UploadScheduler.UploadStatus.UPLOADING){
                                 m_uploadService.start();
                             }
                             break;
@@ -168,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             UploadService.LocalBinder localBinder = (UploadService.LocalBinder) iBinder;
             m_uploadService = localBinder.getService();
-            m_uploadService.addUploadListener(this::updateUploadStatus);
+            m_uploadService.addUploadListener(this::updateUploadUI);
             Log.d(TAG, "Service Connected");
             m_uploadButton.setOnClickListener((View view) ->
             {
@@ -179,49 +180,55 @@ public class MainActivity extends AppCompatActivity {
                     m_uploadService.stop();
                 }
             });
-        };
+            m_settingUseCellularButton.setOnCheckedChangeListener((CompoundButton button, boolean bool) -> {
+                m_uploadService.setWifiRequirement(button.isChecked());
+            });
+        }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
             m_uploadService = null;
         };
 
-        public void updateUploadStatus(UploadScheduler.UploadStatus status) {
-
+        public void updateUploadUI(UploadScheduler.UploadStatus uploadStatus, UploadScheduler.UploadResult uploadResult) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Log.d(TAG, "Updating upload status to " + status.toString());
                     Log.d(TAG, "Is activity active? " + Boolean.toString(m_isActivityVisible));
 
                     if (!m_isActivityVisible)
                         return;
-                    m_uploadStatusText.setText(status.toString());
-                    switch (status) {
+
+                    Log.d(TAG, "Updating upload status to " + uploadStatus.toString());
+                    m_uploadStatusText.setText(uploadStatus.toString());
+
+                    switch (uploadStatus) {
                         case IDLE:
-                            m_uploadStatusText.setTextColor(Color.GREEN);
+                            m_uploadStatusText.setTextColor(Color.BLACK);
                             m_uploadButton.setText("START UPLOAD");
                             m_uploadButton.setVisibility(View.VISIBLE);
                             break;
                         case UPLOADING:
-                            m_uploadStatusText.setTextColor(Color.BLACK);
+                            m_uploadStatusText.setTextColor(Color.GREEN);
                             m_uploadButton.setText("STOP UPLOAD");
                             m_uploadButton.setVisibility(View.VISIBLE);
                             break;
-                        case SUCCESS:
-                            m_uploadStatusText.setTextColor(Color.YELLOW);
-                            m_uploadButton.setText("UPLOAD AGAIN");
-                            m_uploadButton.setVisibility(View.VISIBLE);
+                    }
+
+                    Log.d(TAG, "Updating upload result to " + uploadResult.toString());
+                    m_uploadResultText.setText(uploadResult.toString());
+                    switch (uploadResult) {
+                        case NO_UPLOADS:
+                            m_uploadResultText.setVisibility(View.INVISIBLE);
                             break;
-                        case FAILED:
-                            m_uploadStatusText.setTextColor(Color.RED);
-                            m_uploadButton.setText("UPLOAD FAILED");
-                            m_uploadButton.setVisibility(View.VISIBLE);
+                        default:
+                            m_uploadResultText.setVisibility(View.VISIBLE);
                             break;
                     }
                 }
             });
-        }
+        };
+
     };
     @Override
     protected void onStart(){

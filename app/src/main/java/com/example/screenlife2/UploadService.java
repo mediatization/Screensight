@@ -85,4 +85,6 @@ public class UploadService extends Service {
     public void update() {uploadScheduler.updateUpload();}
     public void stop() {uploadScheduler.stopUpload();}
     public UploadScheduler.UploadStatus getUploadStatus() {return uploadScheduler.getUploadStatus();}
+    public UploadScheduler.UploadResult getUploadResult() {return uploadScheduler.getUploadResult();}
+    public void setWifiRequirement(boolean b) {uploadScheduler.setWifiRequirement(b);}
 }
