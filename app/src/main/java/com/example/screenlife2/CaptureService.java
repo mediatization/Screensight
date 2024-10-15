@@ -30,7 +30,7 @@ import java.lang.reflect.Method;
 // This service is bound and a foreground service
 public class CaptureService extends Service {
     private static final String TAG = "CaptureService";
-    private static final String CHANNEL_ID = "ForegroundServiceChannel";
+    private static final String CHANNEL_ID = "CaptureServiceChannel";
     private static final int NOTIFICATION_ID = 1;
     // The scheduler used to take screenshots
     private CaptureScheduler captureScheduler = null;
@@ -49,7 +49,7 @@ public class CaptureService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
-                    "Foreground Service Channel",
+                    "Capture Service Channel",
                     NotificationManager.IMPORTANCE_DEFAULT
             );
             NotificationManager manager = getSystemService(NotificationManager.class);

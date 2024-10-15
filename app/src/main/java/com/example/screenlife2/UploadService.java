@@ -15,8 +15,8 @@ import androidx.core.app.NotificationCompat;
 
 public class UploadService extends Service {
     private static final String TAG = "UploadService";
-    private static final String CHANNEL_ID = "ForegroundServiceChannel";
-    private static final int NOTIFICATION_ID = 1;
+    private static final String CHANNEL_ID = "UploadServiceChannel";
+    private static final int NOTIFICATION_ID = 2;
     private UploadScheduler uploadScheduler;
     // PLACEHOLDER
     @Override
@@ -39,7 +39,7 @@ public class UploadService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
-                    "Foreground Service Channel",
+                    "Upload Service Channel",
                     NotificationManager.IMPORTANCE_DEFAULT
             );
             NotificationManager manager = getSystemService(NotificationManager.class);
