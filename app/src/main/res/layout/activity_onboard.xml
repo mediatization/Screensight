@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CaptureActivity">
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".OnboardActivity">
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -24,63 +24,67 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.457">
 
+        <TextView
+            android:id="@+id/m_userKeyText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="User Key" />
+
+        <EditText
+            android:id="@+id/m_userKeyTextInput"
+            android:layout_width="wrap_content"
+            android:layout_height="72dp"
+            android:height="52dp"
+            android:hint="Enter Key"
+            android:inputType="text"
+            android:text="USER KEY INPUT" />
+
+        <TextView
+            android:id="@+id/m_useCellularText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Use Cellular Data" />
+
+        <ToggleButton
+            android:id="@+id/m_settingUseCellular"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ToggleButton"
+            android:textOff="OFF"
+            android:textOn="ON" />
+
+        <TextView
+            android:id="@+id/m_autoUploadText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Auto Upload?" />
+
+        <ToggleButton
+            android:id="@+id/m_settingAutoUpload"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ToggleButton" />
+
         <Button
-            android:id="@+id/m_uploadButton"
+            android:id="@+id/m_userKeySubmitButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="UPLOAD AND CLEAR STORED DATA" />
-
-        <Button
-            android:id="@+id/m_startStopCaptureButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="START/STOP CAPTURE" />
-
-        <TextView
-            android:id="@+id/m_uploadStatusText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="UPLOAD STATUS" />
-
-        <TextView
-            android:id="@+id/m_uploadResultText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="UPLOAD STATUS" />
-
-        <TextView
-            android:id="@+id/m_numCapturedFilesText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="NUM CAPTURED FILES" />
-
-        <Button
-            android:id="@+id/m_resumePauseCaptureButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="RESUME/PAUSE CAPTURE" />
-
-        <TextView
-            android:id="@+id/m_captureStatusText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:height="48dp"
-            android:text="CAPTURE STATUS" />
+            android:text="SAVE" />
 
     </LinearLayout>
 
     <ImageView
-        android:id="@+id/m_blackOutPanel"
+        android:id="@+id/m_blackOutPanel2"
         android:layout_width="418dp"
         android:layout_height="734dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
         android:clickable="true"
         android:focusable="true"
+        android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/linearLayout"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@android:drawable/screen_background_dark" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -59,7 +59,7 @@ public class Settings {
             try {
                 return String.format(m_json.getString(s1), s2);
             } catch (JSONException e) {
-                System.out.println("ERROR: Settings JSON has no such value");
+                Log.d(TAG, "ERROR: Settings JSON has no such value: " + s1);
                 return "";
             }
         }

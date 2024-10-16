@@ -16,13 +16,9 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
-import android.Manifest;
 
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
@@ -31,10 +27,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.io.File;
-import java.io.IOException;
-
-public class MainActivity extends AppCompatActivity {
+public class CaptureActivity extends AppCompatActivity {
     private boolean m_isActivityVisible = false;
     private static final String TAG = "MainActivity";
     private static final int AUTO_UPLOAD_COUNT = 500;
@@ -48,11 +41,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView m_numCapturedFilesText;
     private TextView m_uploadStatusText;
     private TextView m_uploadResultText;
-    private EditText m_userKeyTextInput;
-    private Button m_userKeySubmitButton;
-    private Button m_userKeyEditButton;
-    private TextView m_userKeyText;
-    private ToggleButton m_settingUseCellularButton;
 
     /** Service Members*/
     private CaptureService m_captureService = null;
@@ -62,7 +50,13 @@ public class MainActivity extends AppCompatActivity {
             CaptureService.LocalBinder localBinder = (CaptureService.LocalBinder) iBinder;
             m_captureService = localBinder.getService();
             m_captureService.addCaptureListener(this::updateCaptureStatus);
-            Log.d(TAG, "Service Connected");
+            Log.d(TAG, "Capture Service Connected");
+            // Only start the capture service when it is active
+            if (m_captureService != null && !m_captureService.Initialized && m_isActivityVisible) {
+                // Start the capturing
+                m_captureService.start();
+                Log.d(TAG, "Capture Service Started On Connection");
+            }
             // Add the on-click events to the UI
             m_startStopCaptureButton.setOnClickListener((View view) ->
             {
@@ -80,32 +74,6 @@ public class MainActivity extends AppCompatActivity {
                     m_captureService.start();
                 } else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
                     m_captureService.pause();
-                }
-            });
-            m_userKeySubmitButton.setOnClickListener((View view) ->
-            {
-                if (m_userKeyTextInput.length() == 8 && m_userKeyTextInput.getText() != null) {
-                    // Overwrite the hash and key in the settings
-                    // TODO: DETERMINE CORRECT "KEY" VALUE
-                    Settings.setString("hash", m_userKeyTextInput.getText().toString());
-                    Settings.setString("key", "00000000000000000000000000000000");
-                    Settings.save();
-                    m_userKeyText.setText(m_userKeyTextInput.getText().toString());
-                    m_userKeyTextInput.setActivated(false);
-                    m_userKeySubmitButton.setActivated(false);
-                    m_userKeyEditButton.setActivated(true);
-                }
-            });
-            m_userKeyEditButton.setOnClickListener((View view) ->
-            {
-                m_userKeyTextInput.setActivated(true);
-                m_userKeySubmitButton.setActivated(true);
-                m_userKeyEditButton.setActivated(false);
-            });
-            m_settingUseCellularButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    Settings.setString("useCellular", Boolean.toString(isChecked));
                 }
             });
             Log.d(TAG, "UI On clicks were added");
@@ -170,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
             UploadService.LocalBinder localBinder = (UploadService.LocalBinder) iBinder;
             m_uploadService = localBinder.getService();
             m_uploadService.addUploadListener(this::updateUploadUI);
-            Log.d(TAG, "Service Connected");
+            Log.d(TAG, "Upload Service Connected");
             m_uploadButton.setOnClickListener((View view) ->
             {
                 if(m_uploadService.getUploadStatus() != UploadScheduler.UploadStatus.UPLOADING) {
@@ -180,9 +148,14 @@ public class MainActivity extends AppCompatActivity {
                     m_uploadService.stop();
                 }
             });
+            // TODO: Make UploadService read from settings itself ***
+            /*
             m_settingUseCellularButton.setOnCheckedChangeListener((CompoundButton button, boolean bool) -> {
                 m_uploadService.setWifiRequirement(button.isChecked());
             });
+             */
+            // TODO: CHECK ABOVE, REPLACE THIS ***
+            m_uploadService.setWifiRequirement(true);
         }
 
         @Override
@@ -246,10 +219,13 @@ public class MainActivity extends AppCompatActivity {
         {
             // Start the capturing
             m_captureService.start();
-            Log.d(TAG, "Capture Service was started");
+            Log.d(TAG, "Capture Service Started On Resume");
         }
         else if (m_captureService != null) {
             m_captureService.update();
+        }
+        else{
+            Log.d(TAG, "Capture service is null");
         }
         if(m_uploadService != null) {
             m_uploadService.update();
@@ -284,10 +260,10 @@ public class MainActivity extends AppCompatActivity {
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
                     // Permission is granted
-                    Toast.makeText(MainActivity.this, "Notification Permission Granted", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(CaptureActivity.this, "Notification Permission Granted", Toast.LENGTH_SHORT).show();
                 } else {
                     // Permission denied
-                    Toast.makeText(MainActivity.this, "Permission Denied. Closing...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(CaptureActivity.this, "Permission Denied. Closing...", Toast.LENGTH_SHORT).show();
                     // Close the app
                     closeApp();
                 }
@@ -301,12 +277,12 @@ public class MainActivity extends AppCompatActivity {
                 public void onActivityResult(ActivityResult result) {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         // Permission granted
-                        Toast.makeText(MainActivity.this, "Media Projection Permission Granted", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(CaptureActivity.this, "Media Projection Permission Granted", Toast.LENGTH_SHORT).show();
                         // Now you can start the screen capture
                         onResult(result, getIntent());
                     } else {
                         // Permission denied
-                        Toast.makeText(MainActivity.this, "Permission Denied. Closing...", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(CaptureActivity.this, "Permission Denied. Closing...", Toast.LENGTH_SHORT).show();
                         // Close the app
                         closeApp();
                     }
@@ -319,10 +295,10 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
                 // Permission is already granted
-                Toast.makeText(MainActivity.this, "Notification Permission Already Granted", Toast.LENGTH_SHORT).show();
+                Toast.makeText(CaptureActivity.this, "Notification Permission Already Granted", Toast.LENGTH_SHORT).show();
             } else if (shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)) {
                 // Show rationale and request permission
-                Toast.makeText(MainActivity.this, "Notification Permission is required for showing notifications.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(CaptureActivity.this, "Notification Permission is required for showing notifications.", Toast.LENGTH_SHORT).show();
                 requestNotificationLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
             } else {
                 // Request the permission directly
@@ -369,25 +345,14 @@ public class MainActivity extends AppCompatActivity {
         m_captureStatusText = findViewById(R.id.m_captureStatusText);
         m_numCapturedFilesText = findViewById(R.id.m_numCapturedFilesText);
         m_uploadStatusText = findViewById(R.id.m_uploadStatusText);
-        m_userKeyTextInput = findViewById(R.id.m_userKeyTextInput);
-        m_userKeySubmitButton = findViewById(R.id.m_userKeySubmitButton);
-        m_userKeyEditButton = findViewById(R.id.m_userKeyEditButton);
-        m_userKeyText = findViewById(R.id.m_userKeyText);
-        m_settingUseCellularButton = findViewById(R.id.m_settingUseCellularButton);
+        m_uploadResultText = findViewById(R.id.m_uploadResultText);
         Log.d(TAG, "UI was hooked up");
-        // Try to grab the settings
-        loadOrCreateSettings();
-        Log.d(TAG, "Settings were loaded");
-        // Populate the settings
-        m_userKeyTextInput.setText(Settings.getString("hash", "00000000"));
-        m_settingUseCellularButton.setChecked(Boolean.parseBoolean(Settings.getString("useCellular", "")));
-        Log.d(TAG, "Settings UI was updated");
         // Get screen density
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
         int screenDensity = metrics.densityDpi;
         // Set up the capture service
-        Intent screenCaptureIntent = new Intent(MainActivity.this, CaptureService.class);
+        Intent screenCaptureIntent = new Intent(CaptureActivity.this, CaptureService.class);
         screenCaptureIntent.putExtra("resultCode", result.getResultCode());
         screenCaptureIntent.putExtra("intentData", result.getData());
         screenCaptureIntent.putExtra("screenDensity", screenDensity);
@@ -402,7 +367,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "Capture Service was bound");
 
         // Set up the upload service
-        Intent uploadIntent = new Intent(MainActivity.this, UploadService.class);
+        Intent uploadIntent = new Intent(CaptureActivity.this, UploadService.class);
         // Start the service
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Log.d(TAG, "Calling startForegroundService");
@@ -412,75 +377,5 @@ public class MainActivity extends AppCompatActivity {
         bindService(uploadIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE);
 
         Log.d(TAG, "Upload Service was bound");
-    }
-
-    // Loads values into the user's settings file
-    private void overwriteSettings(String hash, String key, String useCellular)
-    {
-        Settings.setString("hash", "00000000");
-        Settings.setString("key", "00000000000000000000000000000000");
-        Settings.setString("useCellular", "false");
-        Settings.save();
-    }
-
-    // Loads an existing settings JSON file into a Settings object
-    // OR creates a new JSON file in the settings folder, populates it, and loads it into a Settings object
-    private void loadOrCreateSettings(){
-        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-        }
-        boolean existed = true;
-
-        // Get the directory path
-        File directory = new File(getApplicationContext().getExternalFilesDir(null), "/screenlife");
-
-        // Check if the directory path is not a file
-        if (directory.exists() && !directory.isDirectory()) {
-            throw new RuntimeException("Path is not a directory: " + directory.getAbsolutePath());
-        }
-
-        // Create the directory if it doesn't exist
-        if (!directory.exists()) {
-            if (!directory.mkdirs()) {
-                throw new RuntimeException("Failed to create directory: " + directory.getAbsolutePath());
-            } else {
-                Log.i(TAG, "Directory created: " + directory.getAbsolutePath());
-            }
-        } else {
-            Log.i(TAG, "Directory already exists: " + directory.getAbsolutePath());
-        }
-
-        // Create the file inside the directory
-        File jsonFile = new File(directory, "settings.JSON");
-
-        if (jsonFile.exists() && !jsonFile.isFile()) {
-            throw new RuntimeException("Path is not a file: " + jsonFile.getAbsolutePath());
-        }
-
-        // If the file doesn't exist, create it
-        if (!jsonFile.exists()) {
-            Log.i(TAG, "JSON file does not exist, creating a new one.");
-            try {
-                if (jsonFile.createNewFile()) {
-                    Log.i(TAG, "JSON file created: " + jsonFile.getAbsolutePath());
-                } else {
-                    Log.e(TAG, "Failed to create JSON file: " + jsonFile.getAbsolutePath());
-                }
-            } catch (IOException e) {
-                Log.e(TAG, "Error creating JSON file", e);
-                throw new RuntimeException(e);
-            }
-        } else {
-            Log.i(TAG, "JSON file already exists: " + jsonFile.getAbsolutePath());
-        }
-        // Load the settings
-        Settings.load(jsonFile);
-
-        // Populate an empty settings file
-        // TODO: ADD MORE RIGOROUS CASES FOR CHECKING BROKEN SETTINGS
-        overwriteSettings(
-                "00000000",
-                "00000000000000000000000000000000",
-                "false");
     }
 }
