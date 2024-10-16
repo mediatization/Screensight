@@ -55,13 +55,15 @@ public class UploadService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Upload Service")
                 .setContentText("The service is running in the foreground")
-                .setSmallIcon(R.drawable.ic_launcher_background)  // Add an icon for the notification
+                .setSmallIcon(R.raw.appicon)  // Add an icon for the notification
                 .setContentIntent(pendingIntent)
+                .setAutoCancel(false)
+                .setOngoing(true)
                 .build();
 
         // Start the service in the foreground with the notification
         startForeground(NOTIFICATION_ID, notification);
-        return Service.START_NOT_STICKY;
+        return Service.START_STICKY;
     }
 
     //placeholder

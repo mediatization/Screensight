@@ -139,6 +139,11 @@ public class CaptureActivity extends AppCompatActivity {
             m_uploadService = localBinder.getService();
             m_uploadService.addUploadListener(this::updateUploadUI);
             Log.d(TAG, "Upload Service Connected");
+            // Update the UI for the upload
+            if (m_uploadService != null && m_isActivityVisible) {
+                // Start the capturing
+                m_uploadService.update();
+            }
             m_uploadButton.setOnClickListener((View view) ->
             {
                 if(m_uploadService.getUploadStatus() != UploadScheduler.UploadStatus.UPLOADING) {
@@ -155,7 +160,7 @@ public class CaptureActivity extends AppCompatActivity {
             });
              */
             // TODO: CHECK ABOVE, REPLACE THIS ***
-            m_uploadService.setWifiRequirement(true);
+            m_uploadService.setWifiRequirement(false);
         }
 
         @Override

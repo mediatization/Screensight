@@ -52,19 +52,36 @@ public class CaptureService extends Service {
         }
 
         // Create a notification for the foreground service
-        Intent notificationIntent = new Intent(this, CaptureActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {  // Android 12 and above
+            pendingIntent = PendingIntent.getActivity(
+                    this,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_IMMUTABLE
+            );
+        } else {
+            pendingIntent = PendingIntent.getActivity(
+                    this,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT
+            );
+        }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Capture Service")
                 .setContentText("The service is running in the foreground")
-                .setSmallIcon(R.drawable.ic_launcher_background)  // Add an icon for the notification
+                .setSmallIcon(R.raw.appicon)  // Add an icon for the notification
                 .setContentIntent(pendingIntent)
+                .setAutoCancel(false)
+                .setOngoing(true)
                 .build();
 
         // Start the service in the foreground with the notification
         startForeground(NOTIFICATION_ID, notification);
-        return Service.START_NOT_STICKY;
+        return Service.START_STICKY;
     }
 
     // Required function for Services to bind, call this after start
