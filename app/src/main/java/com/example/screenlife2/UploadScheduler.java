@@ -102,7 +102,10 @@ public class UploadScheduler {
         //first argument reads from the settings whether or not the user currently has uploading
         //with cellular enabled, second argument checks whether or not user is currently connected
         //to wifi
-        if(!Boolean.parseBoolean(Settings.getString("useCellular", "")) && !checkWifiOnAndConnected()) {
+
+        // Wifi is required and we are not connected
+        if(!Boolean.parseBoolean(Settings.getString("useCellular", "")) &&!checkWifiOnAndConnected()) {
+            // FAIL
             uploadResult = UploadResult.WIFI_FAILURE;
             // Invoke listeners
             invokeListeners();
