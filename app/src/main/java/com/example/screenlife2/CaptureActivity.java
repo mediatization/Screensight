@@ -119,8 +119,9 @@ public class CaptureActivity extends AppCompatActivity {
                             m_startStopCaptureButton.setText("STOP CAPTURE");
                             m_resumePauseCaptureButton.setText("PAUSE CAPTURE");
                             m_resumePauseCaptureButton.setVisibility(View.VISIBLE);
-                            // Check to upload
-                            if (numCaptured >= Constants.AUTO_UPLOAD_COUNT && m_captureService.getUploadStatus() != UploadScheduler.UploadStatus.UPLOADING){
+                            //Seeing if conditions are met for an auto upload to start
+                            //
+                            if (numCaptured >= Constants.AUTO_UPLOAD_COUNT && m_captureService.ableToUpload()){
                                 m_captureService.startUpload();
                             }
                             break;

@@ -178,4 +178,16 @@ public class UploadScheduler {
 
     public UploadStatus getUploadStatus() {return uploadStatus;}
     public UploadResult getUploadResult() {return uploadResult;}
+    //function for checking whether or not there is already an upload in progress,
+    //and if the user requires wifi connectivity to upload whether or not they are currently
+    //connected to wifi
+    public boolean ableToUpload() {
+        boolean isCurrentlyIdle = this.uploadStatus == UploadStatus.IDLE;
+
+        if(Boolean.parseBoolean(Settings.getString("useCellular", ""))) {
+            return isCurrentlyIdle;
+        }
+
+        return checkWifiOnAndConnected() && isCurrentlyIdle;
+    }
 }

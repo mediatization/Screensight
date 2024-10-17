@@ -156,5 +156,6 @@ public class CaptureService extends Service {
     public void stopUpload() {uploadScheduler.stopUpload();}
     public UploadScheduler.UploadStatus getUploadStatus() {return uploadScheduler.getUploadStatus();}
     public UploadScheduler.UploadResult getUploadResult() {return uploadScheduler.getUploadResult();}
+    public boolean ableToUpload() {return uploadScheduler.ableToUpload();}
 
 }
