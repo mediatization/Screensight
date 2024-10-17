@@ -153,14 +153,6 @@ public class CaptureActivity extends AppCompatActivity {
                     m_uploadService.stop();
                 }
             });
-            // TODO: Make UploadService read from settings itself ***
-            /*
-            m_settingUseCellularButton.setOnCheckedChangeListener((CompoundButton button, boolean bool) -> {
-                m_uploadService.setWifiRequirement(button.isChecked());
-            });
-             */
-            // TODO: CHECK ABOVE, REPLACE THIS ***
-            m_uploadService.setWifiRequirement(false);
         }
 
         @Override

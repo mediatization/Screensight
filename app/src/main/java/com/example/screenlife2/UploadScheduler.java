@@ -50,13 +50,6 @@ public class UploadScheduler {
     private UploadStatus uploadStatus = UploadStatus.IDLE;
     private UploadResult uploadResult = UploadResult.NO_UPLOADS;
 
-    //interval between attempted uploads in minutes
-    //could probably be turned into a const?
-
-    //For keeping track of if we are connected to wifi
-    //will need to figure out how to update this
-    private boolean wifiRequired = true;
-
     // The context of the application, needed for certain function calls.
     private Context m_context;
 
@@ -106,7 +99,10 @@ public class UploadScheduler {
     public void startUpload() {
         stopUpload();
 
-        if(wifiRequired && !checkWifiOnAndConnected()) {
+        //first argument reads from the settings whether or not the user currently has uploading
+        //with cellular enabled, second argument checks whether or not user is currently connected
+        //to wifi
+        if(!Boolean.parseBoolean(Settings.getString("useCellular", "")) && !checkWifiOnAndConnected()) {
             uploadResult = UploadResult.WIFI_FAILURE;
             // Invoke listeners
             invokeListeners();
@@ -197,5 +193,4 @@ public class UploadScheduler {
 
     public UploadStatus getUploadStatus() {return uploadStatus;}
     public UploadResult getUploadResult() {return uploadResult;}
-    public void setWifiRequirement(boolean b) {wifiRequired = b;}
 }
