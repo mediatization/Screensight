@@ -25,7 +25,6 @@ public class OnboardActivity extends AppCompatActivity {
     private ImageView m_blackOutPanel;
     private EditText m_userKeyTextInput;
     private ToggleButton m_settingUseCellularButton;
-    private ToggleButton m_settingAutoUploadButton;
     private Button m_submitButton;
 
     @Override
@@ -40,7 +39,6 @@ public class OnboardActivity extends AppCompatActivity {
         m_blackOutPanel = findViewById(R.id.m_blackOutPanel2);
         m_userKeyTextInput = findViewById(R.id.m_userKeyTextInput);
         m_settingUseCellularButton = findViewById(R.id.m_settingUseCellular);
-        m_settingAutoUploadButton = findViewById(R.id.m_settingAutoUpload);
         m_submitButton = findViewById(R.id.m_userKeySubmitButton);
         // Add submit button on click listener
         m_submitButton.setOnClickListener(view -> {
@@ -56,7 +54,6 @@ public class OnboardActivity extends AppCompatActivity {
         });
         // Fill in settings
         m_userKeyTextInput.setText(Settings.getString("key", ""));
-        m_settingAutoUploadButton.setChecked(Boolean.parseBoolean(Settings.getString("autoUpload", "")));
         m_settingUseCellularButton.setChecked(Boolean.parseBoolean(Settings.getString("useCellular", "")));
         // Disable black out panel
         m_blackOutPanel.setVisibility(View.INVISIBLE);
@@ -103,7 +100,6 @@ public class OnboardActivity extends AppCompatActivity {
             // Populate an empty settings file
             Settings.setString("hash", "00000000");
             Settings.setString("key", "0000000000000000000000000000000000000000000000000000000000000000");
-            Settings.setString("autoUpload", "true");
             Settings.setString("useCellular", "false");
             Settings.save();
         }
@@ -118,10 +114,6 @@ public class OnboardActivity extends AppCompatActivity {
                 Log.d(TAG, "Adding key to Settings");
                 Settings.setString("key", "0000000000000000000000000000000000000000000000000000000000000000");
             }
-            if (Settings.getString("autoUpload", "").isEmpty()) {
-                Log.d(TAG, "Adding autoUpload to Settings");
-                Settings.setString("autoUpload", "true");
-            }
             if (Settings.getString("useCellular", "").isEmpty()) {
                 Log.d(TAG, "Adding useCellular to Settings");
                 Settings.setString("useCellular", "false");
@@ -134,7 +126,6 @@ public class OnboardActivity extends AppCompatActivity {
         String key = m_userKeyTextInput.getText().toString();
         String hash = "";
         String useCellular = Boolean.toString(m_settingUseCellularButton.isChecked());
-        String autoUpload = Boolean.toString(m_settingAutoUploadButton.isChecked());
         Log.d(TAG, "Key has length " + key.length());
         if (key.length() == 64) {
             try {
@@ -145,7 +136,6 @@ public class OnboardActivity extends AppCompatActivity {
                 Settings.setString("key", key);
                 Settings.setString("hash", hash);
                 Settings.setString("useCellular", useCellular);
-                Settings.setString("autoUpload", autoUpload);
                 Settings.save();
                 return true;
 

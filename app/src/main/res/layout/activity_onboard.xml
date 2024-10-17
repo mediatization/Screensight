@@ -53,18 +53,6 @@
             android:textOff="OFF"
             android:textOn="ON" />
 
-        <TextView
-            android:id="@+id/m_autoUploadText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Auto Upload?" />
-
-        <ToggleButton
-            android:id="@+id/m_settingAutoUpload"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ToggleButton" />
-
         <Button
             android:id="@+id/m_userKeySubmitButton"
             android:layout_width="wrap_content"
