@@ -54,26 +54,42 @@ public class CaptureActivity extends AppCompatActivity {
             // Only start the capture service when it is active
             if (m_captureService != null && !m_captureService.Initialized && m_isActivityVisible) {
                 // Start the capturing
-                m_captureService.start();
+                m_captureService.startCapture();
                 Log.d(TAG, "Capture Service Started On Connection");
             }
             // Add the on-click events to the UI
             m_startStopCaptureButton.setOnClickListener((View view) ->
             {
                 if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.STOPPED) {
-                    m_captureService.start();
+                    m_captureService.startCapture();
                 } else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
-                    m_captureService.stop();
+                    m_captureService.stopCapture();
                 } else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
-                    m_captureService.stop();
+                    m_captureService.stopCapture();
                 }
             });
             m_resumePauseCaptureButton.setOnClickListener((View view) ->
             {
                 if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
-                    m_captureService.start();
+                    m_captureService.startCapture();
                 } else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
-                    m_captureService.pause();
+                    m_captureService.pauseCapture();
+                }
+            });
+            // Upload stuff
+            m_captureService.addUploadListener(this::updateUploadUI);
+            Log.d(TAG, "Upload Service Connected");
+            // Update the UI for the upload
+            if (m_captureService != null && m_isActivityVisible) {
+                m_captureService.updateUpload();
+            }
+            m_uploadButton.setOnClickListener((View view) ->
+            {
+                if(m_captureService.getUploadStatus() != UploadScheduler.UploadStatus.UPLOADING) {
+                    m_captureService.startUpload();
+                }
+                else {
+                    m_captureService.stopUpload();
                 }
             });
             Log.d(TAG, "UI On clicks were added");
@@ -104,8 +120,8 @@ public class CaptureActivity extends AppCompatActivity {
                             m_resumePauseCaptureButton.setText("PAUSE CAPTURE");
                             m_resumePauseCaptureButton.setVisibility(View.VISIBLE);
                             // Check to upload
-                            if (numCaptured >= Constants.AUTO_UPLOAD_COUNT && m_uploadService.getUploadStatus() != UploadScheduler.UploadStatus.UPLOADING){
-                                m_uploadService.start();
+                            if (numCaptured >= Constants.AUTO_UPLOAD_COUNT && m_captureService.getUploadStatus() != UploadScheduler.UploadStatus.UPLOADING){
+                                m_captureService.startUpload();
                             }
                             break;
                         case STOPPED:
@@ -129,37 +145,6 @@ public class CaptureActivity extends AppCompatActivity {
                 }
             });
         }
-    };
-
-    private UploadService m_uploadService = null;
-    private final ServiceConnection uploadServiceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            UploadService.LocalBinder localBinder = (UploadService.LocalBinder) iBinder;
-            m_uploadService = localBinder.getService();
-            m_uploadService.addUploadListener(this::updateUploadUI);
-            Log.d(TAG, "Upload Service Connected");
-            // Update the UI for the upload
-            if (m_uploadService != null && m_isActivityVisible) {
-                // Start the capturing
-                m_uploadService.update();
-            }
-            m_uploadButton.setOnClickListener((View view) ->
-            {
-                if(m_uploadService.getUploadStatus() != UploadScheduler.UploadStatus.UPLOADING) {
-                    m_uploadService.start();
-                }
-                else {
-                    m_uploadService.stop();
-                }
-            });
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            m_uploadService = null;
-        };
-
         public void updateUploadUI(UploadScheduler.UploadStatus uploadStatus, UploadScheduler.UploadResult uploadResult) {
             runOnUiThread(new Runnable() {
                 @Override
@@ -197,9 +182,9 @@ public class CaptureActivity extends AppCompatActivity {
                     }
                 }
             });
-        };
-
+        }
     };
+
     @Override
     protected void onStart(){
         super.onStart();
@@ -215,17 +200,15 @@ public class CaptureActivity extends AppCompatActivity {
         if (m_captureService != null && !m_captureService.Initialized)
         {
             // Start the capturing
-            m_captureService.start();
+            m_captureService.startCapture();
             Log.d(TAG, "Capture Service Started On Resume");
         }
         else if (m_captureService != null) {
-            m_captureService.update();
+            m_captureService.updateCapture();
+            m_captureService.updateUpload();
         }
         else{
             Log.d(TAG, "Capture service is null");
-        }
-        if(m_uploadService != null) {
-            m_uploadService.update();
         }
     }
 
@@ -362,17 +345,5 @@ public class CaptureActivity extends AppCompatActivity {
         bindService(screenCaptureIntent, captureServiceConnection, Context.BIND_AUTO_CREATE);
 
         Log.d(TAG, "Capture Service was bound");
-
-        // Set up the upload service
-        Intent uploadIntent = new Intent(CaptureActivity.this, UploadService.class);
-        // Start the service
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.d(TAG, "Calling startForegroundService");
-            startForegroundService(uploadIntent);
-        }
-        // Bind the service
-        bindService(uploadIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE);
-
-        Log.d(TAG, "Upload Service was bound");
     }
 }

@@ -27,8 +27,11 @@ public class CaptureService extends Service {
     private static final int NOTIFICATION_ID = 1;
     // The scheduler used to take screenshots
     private CaptureScheduler captureScheduler = null;
+    // The scheduler used to upload
+    private UploadScheduler uploadScheduler;
     // Whether the service has been started at least once
     public boolean Initialized = false;
+
     // Create is called first
     @Override
     public void onCreate(){
@@ -92,6 +95,8 @@ public class CaptureService extends Service {
         Intent parceIntent = intent.getParcelableExtra("intentData");
         if (captureScheduler == null)
             captureScheduler = new CaptureScheduler(getApplicationContext(), screenDensity, resultCode, parceIntent);
+        if (uploadScheduler == null)
+            uploadScheduler = new UploadScheduler(getApplicationContext());
         Log.d(TAG, "Capture Service on bind was called");
         return new LocalBinder();
     }
@@ -105,6 +110,7 @@ public class CaptureService extends Service {
     @Override
     public void onDestroy(){
         captureScheduler.stopCapture();
+        uploadScheduler.stopUpload();
         super.onDestroy();
     }
     /** Methods for the client */
@@ -118,20 +124,20 @@ public class CaptureService extends Service {
         captureScheduler.clearListeners();
     }
     // Starts capturing
-    public void start(){
+    public void startCapture(){
         Initialized = true;
         captureScheduler.startCapture();
     }
     // Pauses capturing
-    public void pause(){
+    public void pauseCapture(){
         captureScheduler.pauseCapture();
     }
     // Pauses capturing
-    public void stop(){
+    public void stopCapture(){
         captureScheduler.stopCapture();
     }
     // Updates any listeners
-    public void update() { captureScheduler.updateCapture(); }
+    public void updateCapture() { captureScheduler.updateCapture(); }
     // Returns captured files
     public File[] getFiles(){
         return captureScheduler.getCaptures();
@@ -140,4 +146,15 @@ public class CaptureService extends Service {
     public int getNumCaptured() {return captureScheduler.getNumCaptured();}
     // Returns the capture status
     public CaptureScheduler.CaptureStatus getCaptureStatus() { return captureScheduler.getCaptureStatus();}
+
+    public void addUploadListener(UploadScheduler.UploadListener listener){
+        uploadScheduler.addListener(listener);
+    }
+
+    public void startUpload(){uploadScheduler.startUpload();}
+    public void updateUpload() {uploadScheduler.updateUpload();}
+    public void stopUpload() {uploadScheduler.stopUpload();}
+    public UploadScheduler.UploadStatus getUploadStatus() {return uploadScheduler.getUploadStatus();}
+    public UploadScheduler.UploadResult getUploadResult() {return uploadScheduler.getUploadResult();}
+
 }
