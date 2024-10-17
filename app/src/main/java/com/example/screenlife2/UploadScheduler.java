@@ -81,6 +81,7 @@ public class UploadScheduler {
 
     //stolen directly from stack overflow
     //if it does not work its not my fault :)
+    // https://stackoverflow.com/questions/3841317/how-do-i-see-if-wi-fi-is-connected-on-android
     private boolean checkWifiOnAndConnected() {
         WifiManager wifiMgr = (WifiManager) m_context.getSystemService(Context.WIFI_SERVICE);
 
