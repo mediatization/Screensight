@@ -3,8 +3,7 @@ package com.example.screenlife2;
 import android.util.Log;
 
 import java.io.File;
-
-//probably an inefficient data type to be using
+import java.util.ArrayList;
 import java.util.List;
 
 import okhttp3.MediaType;
@@ -29,13 +28,19 @@ public class Batch {
 
     //constructor, takes a list of files to send and a client
     //to send the files to
-    Batch(List<File> files, OkHttpClient client) {
-        this.files = files;
+    Batch(OkHttpClient client) {
+        this.files = new ArrayList<>();
         this.client = client;
     }
 
+    //helper function to add files to a batch
+    public void addFile(File f) {
+        files.add(f);
+    }
+
     //Function to actually send the files
-    public String sendFiles() {
+    //returns true on success and false on failure
+    public boolean sendFiles() {
 
         //MultipartBody Builder is a class for adding data to http packets easily
         MultipartBody.Builder bodyPart = new MultipartBody.Builder()
@@ -43,14 +48,13 @@ public class Batch {
 
         //iterating through all our files and checking their validity
         //if the file corresponds to an actual image then we add it to the packet
-        //.create is depreceated, need to look into
         for (int i = 0; i < files.size(); i++) {
             if (files.get(i).isFile()) {
                 bodyPart.addFormDataPart("file" + (i + 1), files.get(i).getName(), RequestBody.create(files.get(i), PNG));
             }
         }
 
-        //Turning our data into an actual packet to be sent to client
+        //Building the rest of our request to send to Azure
         RequestBody body = bodyPart.build();
         Request request = new Request.Builder()
                 .addHeader("Content-Type", "multipart/form-data")
@@ -68,31 +72,25 @@ public class Batch {
             //sending the upload request and storing the response
             response = client.newCall(request).execute();
             //printing out how long upload too to our console
-            Log.d(TAG, "Upload of " + files.size() + " files took " + (System.nanoTime() - startTime)/1000000 + "ms");
+            Log.d(TAG, "Send of " + files.size() + " files took " + (System.nanoTime() - startTime)/1000000 + "ms");
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         //turning our response into a code (need to refactor)
         int code = response != null ? response.code() : 999;
-        //checking the range of the code
-        if (code >= 400  && code < 500) {
-            Log.d(TAG, response.toString());
+        Log.d(TAG, "Received response of: " + response.toString());
+        //closing the connection
+        response.close();
+
+        //if files were successfully sent delete them
+        //and tell calling function upload finished
+        if(code == 201) {
+            files.forEach(File::delete);
+            return true;
         }
-        //closing the connection if we got a response
-        if (response != null) response.close();
-        //returning the response sent by client
-        return String.valueOf(code);
-    }
 
-    //deletes all the files currently stored on users device
-    public void deleteFiles() {
-        files.forEach(File::delete);
+        //otherwise let the calling function know there was an error
+        return false;
     }
-
-    //Returning the number of files being sent
-    public int size() {
-        return files.size();
-    }
-
 }

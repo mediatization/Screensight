@@ -110,7 +110,7 @@ public class UploadScheduler {
         }
 
         Runnable uploadRunner = this::uploadImages;
-        Log.d(TAG, "Upload scheduler is attempting first upload");
+        Log.d(TAG, "Upload scheduler is attempting upload");
         uploadHandle = scheduler.schedule(uploadRunner, 0, TimeUnit.MINUTES);
         uploadStatus = UploadStatus.UPLOADING;
         // Invoke listeners
@@ -142,45 +142,30 @@ public class UploadScheduler {
         //converting the files into a more iteration friendly datastructure
         //i dont know if list is optimal or how much performance we losing using a list
         LinkedList<File> fileList = new LinkedList<>(Arrays.asList(files));
-
-        //updating our upload status
-        uploadStatus = UploadStatus.UPLOADING;
-        // Invoke listeners
-        invokeListeners();
-
         Log.d(TAG, "Found " + fileList.size() +  " files to upload");
+
+        //unsure what client does so leaving this as a method variable for the time being
+        OkHttpClient client = new OkHttpClient.Builder().readTimeout(10, TimeUnit.SECONDS).build();
 
         //split our list of files into batches and uploading them
         while (!fileList.isEmpty()) {
-            //creating a list of files for a single batch
-            List<File> nextBatch = new LinkedList<>();
+
+            //creating a new batch with our list of files
+            Batch batch = new Batch(client);
 
             //iterating through our list of files adding them to our nextBatch list while
             //ensuring that we do not send to many in one batch and that the file list does not run out
             for (int i = 0; i < Constants.BATCH_SIZE  && !fileList.isEmpty(); i++) {
-                nextBatch.add(fileList.remove());
-                Log.d(TAG, "Adding file: " + nextBatch.get(nextBatch.size()-1).toString() + "to batch");
+                File file = fileList.remove();
+                batch.addFile(file);
+                Log.d(TAG, "Adding file: " + file.toString() + "to batch");
             }
 
-            //unsure what client does so leaving this as a method variable for the time being
-            OkHttpClient client = new OkHttpClient.Builder().readTimeout(10, TimeUnit.SECONDS).build();
-
-            //creating a new batch with our list of files
-            Batch batch = new Batch(nextBatch, client);
-            //Sending the files and getting our return code
-            String code = batch.sendFiles();
-            //on success delete the files
-            if (code.equals("201")) {
-                batch.deleteFiles();
-            } else {
+            if (!batch.sendFiles()) {
                 //on failure notify user and stop the loop
-                Log.d(TAG, "Batch failed to send");
                 uploadResult = UploadResult.NETWORK_FAILURE;
                 break;
             }
-
-            if(uploadResult != UploadResult.NETWORK_FAILURE)
-                Log.d(TAG, "Upload service has sent a batch of: " + nextBatch.size());
         }
 
         //updating uploadStatus
