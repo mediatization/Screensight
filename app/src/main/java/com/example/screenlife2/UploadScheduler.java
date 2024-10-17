@@ -104,7 +104,8 @@ public class UploadScheduler {
         //with cellular enabled, second argument checks whether or not user is currently connected
         //to wifi
 
-        Log.d(TAG, "whether or not currently connected to wifi: " + checkWifiOnAndConnected());
+        Log.d(TAG, "are we connected to wifi: " + checkWifiOnAndConnected());
+        Log.d(TAG, "are we allowed to use cellular: " + Boolean.parseBoolean(Settings.getString("useCellular", "")));
 
         // Wifi is required and we are not connected
         if(!Boolean.parseBoolean(Settings.getString("useCellular", "")) &&!checkWifiOnAndConnected()) {
