@@ -93,6 +93,24 @@ public class CaptureScheduler {
                 null, null);
     }
 
+    public void destroy(){
+        // Release MediaProjection
+        if (m_mediaProjection != null) {
+            m_mediaProjection.stop();
+            m_mediaProjection = null;
+        }
+        // Release VirtualDisplay
+        if (m_virtualDisplay != null) {
+            m_virtualDisplay.release();
+            m_virtualDisplay = null;
+        }
+        // Release ImageReader
+        if (m_imageReader != null) {
+            m_imageReader.close();
+            m_imageReader = null;
+        }
+    }
+
     // Adds listeners when the status changes
     public void addListener(CaptureListener listener){
         m_onStatusChangedCallbacks.add(listener);

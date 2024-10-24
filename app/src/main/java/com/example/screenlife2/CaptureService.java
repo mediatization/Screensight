@@ -109,8 +109,10 @@ public class CaptureService extends Service {
     // PLACEHOLDER
     @Override
     public void onDestroy(){
+        Log.d(TAG, "Capture Service destroyed");
         captureScheduler.stopCapture();
         uploadScheduler.stopUpload();
+        captureScheduler.destroy();
         super.onDestroy();
     }
     /** Methods for the client */

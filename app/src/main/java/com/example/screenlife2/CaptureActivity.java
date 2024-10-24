@@ -221,6 +221,20 @@ public class CaptureActivity extends AppCompatActivity {
     }
 
     @Override
+    protected  void onStop(){
+        super.onStop();
+        m_isActivityVisible = false; // Activity is not visible
+        Log.d(TAG, "Activity Stopped");
+    }
+
+    @Override
+    protected void onDestroy(){
+        getApplicationContext().stopService(new Intent(CaptureActivity.this, CaptureService.class));
+        super.onDestroy();
+        Log.d(TAG, "Activity Destroyed");
+    }
+
+    @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         // Request notifications
         startNotificationRequest();
