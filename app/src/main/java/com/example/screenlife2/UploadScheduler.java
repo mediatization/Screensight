@@ -7,7 +7,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
@@ -15,11 +17,14 @@ import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -79,23 +84,6 @@ public class UploadScheduler {
         }
     }
 
-    //stolen directly from stack overflow
-    //if it does not work its not my fault :)
-    // https://stackoverflow.com/questions/3841317/how-do-i-see-if-wi-fi-is-connected-on-android
-    private boolean checkWifiOnAndConnected() {
-        WifiManager wifiMgr = (WifiManager) m_context.getSystemService(Context.WIFI_SERVICE);
-
-        if (wifiMgr.isWifiEnabled()) { // Wi-Fi adapter is ON
-            WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
-
-            // Checking if connected to an access point
-            return wifiInfo.getNetworkId() != -1;
-        }
-        else {
-            return false; // Wi-Fi adapter is OFF
-        }
-    }
-
     //will upload all files currently in directory
     public void startUpload() {
         stopUpload();
@@ -103,8 +91,6 @@ public class UploadScheduler {
         //first argument reads from the settings whether or not the user currently has uploading
         //with cellular enabled, second argument checks whether or not user is currently connected
         //to wifi
-
-        Log.d(TAG, "are we connected to wifi: " + checkWifiOnAndConnected());
         Log.d(TAG, "are we allowed to use cellular: " + Boolean.parseBoolean(Settings.getString("useCellular", "")));
 
         // Wifi is required and we are not connected
