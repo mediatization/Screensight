@@ -65,8 +65,29 @@ public class UploadScheduler {
     // The current runnable task of the scheduler
     private ScheduledFuture<?> uploadHandle = null;
 
+    /* Wifi Connectivity Monitoring
+    dont entirely understand but based off of following stack overflow post
+    https://stackoverflow.com/questions/54527301/connectivitymanager-networkcallback-onavailablenetwork-network-method-is */
+    private boolean conntectedToWifi = false;
+    private final NetworkRequest networkRequest = new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build();
+    private final ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
+        @Override
+        public void onAvailable(@NonNull Network network){
+            super.onAvailable(network);
+            conntectedToWifi = true;
+        }
+
+        @Override
+        public void onLost(@NonNull Network network) {
+            super.onLost(network);
+            conntectedToWifi = false;
+        }
+    };
+    private final ConnectivityManager connectivityManager;
+
     public UploadScheduler(Context c) {
         m_context = c;
+        connectivityManager = (ConnectivityManager) m_context.getSystemService(Context.CONNECTIVITY_SERVICE);
     }
 
     // Adds listeners when the status changes
@@ -88,13 +109,17 @@ public class UploadScheduler {
     public void startUpload() {
         stopUpload();
 
+        //start monitoring wifi connection
+        connectivityManager.registerNetworkCallback(networkRequest, networkCallback);
+
         //first argument reads from the settings whether or not the user currently has uploading
         //with cellular enabled, second argument checks whether or not user is currently connected
         //to wifi
+        Log.d(TAG, "Are we connected to wifi: " + conntectedToWifi);
         Log.d(TAG, "are we allowed to use cellular: " + Boolean.parseBoolean(Settings.getString("useCellular", "")));
 
         // Wifi is required and we are not connected
-        if(!Boolean.parseBoolean(Settings.getString("useCellular", "")) &&!checkWifiOnAndConnected()) {
+        if(!Boolean.parseBoolean(Settings.getString("useCellular", "")) &&!conntectedToWifi) {
             // FAIL
             uploadResult = UploadResult.WIFI_FAILURE;
             // Invoke listeners
@@ -117,6 +142,8 @@ public class UploadScheduler {
         uploadHandle.cancel(false);
         uploadHandle = null;
         uploadStatus = UploadStatus.IDLE;
+        //stopping wifi monitoring
+        connectivityManager.unregisterNetworkCallback(networkCallback);
         // Invoke listeners
         invokeListeners();
     }
@@ -181,6 +208,6 @@ public class UploadScheduler {
             return isCurrentlyIdle;
         }
 
-        return checkWifiOnAndConnected() && isCurrentlyIdle;
+        return conntectedToWifi && isCurrentlyIdle;
     }
 }

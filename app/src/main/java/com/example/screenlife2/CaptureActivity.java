@@ -46,26 +46,6 @@ public class CaptureActivity extends AppCompatActivity {
     private TextView m_uploadStatusText;
     private TextView m_uploadResultText;
 
-    /* Wifi Connectivity Monitoring
-    dont entirely understand but based off of following stack overflow post
-    https://stackoverflow.com/questions/54527301/connectivitymanager-networkcallback-onavailablenetwork-network-method-is */
-    private boolean conntectedToWifi = false;
-    private final NetworkRequest networkRequest = new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build();
-    private final ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
-        @Override
-        public void onAvailable(@NonNull Network network){
-            super.onAvailable(network);
-            conntectedToWifi = true;
-        }
-
-        @Override
-        public void onLost(@NonNull Network network) {
-            super.onLost(network);
-            conntectedToWifi = false;
-        }
-    };
-    private final ConnectivityManager connectivityManager =(ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-
 
     /** Service Members*/
     private CaptureService m_captureService = null;
@@ -216,8 +196,6 @@ public class CaptureActivity extends AppCompatActivity {
         super.onStart();
         m_isActivityVisible = true; // Activity is visible
         Log.d(TAG, "Activity Started");
-        //start monitoring wifi connection
-        connectivityManager.registerNetworkCallback(networkRequest, networkCallback);
     }
     @Override
     protected void onResume() {
@@ -238,9 +216,6 @@ public class CaptureActivity extends AppCompatActivity {
         else{
             Log.d(TAG, "Capture service is null");
         }
-
-        //start monitoring wifi connection
-        connectivityManager.registerNetworkCallback(networkRequest, networkCallback);
     }
 
     @Override
@@ -248,8 +223,6 @@ public class CaptureActivity extends AppCompatActivity {
         super.onPause();
         m_isActivityVisible = false; // Activity is not visible
         Log.d(TAG, "Activity Paused");
-        //stopping wifi monitoring
-        connectivityManager.unregisterNetworkCallback(networkCallback);
     }
 
     @Override
@@ -257,8 +230,6 @@ public class CaptureActivity extends AppCompatActivity {
         super.onStop();
         m_isActivityVisible = false; // Activity is not visible
         Log.d(TAG, "Activity Stopped");
-        //stopping wifi monitoring
-        connectivityManager.unregisterNetworkCallback(networkCallback);
     }
 
     @Override
