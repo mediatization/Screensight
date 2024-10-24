@@ -113,6 +113,7 @@ public class CaptureService extends Service {
         captureScheduler.stopCapture();
         uploadScheduler.stopUpload();
         captureScheduler.destroy();
+        uploadScheduler.destroy();
         super.onDestroy();
     }
     /** Methods for the client */

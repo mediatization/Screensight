@@ -1,20 +1,10 @@
 package com.example.screenlife2;
 
-import static androidx.core.content.ContextCompat.getSystemService;
-
 import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.net.NetworkInfo;
 import android.net.NetworkRequest;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
-import android.os.AsyncTask;
-import android.os.Build;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -23,8 +13,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -56,7 +44,7 @@ public class UploadScheduler {
     private UploadResult uploadResult = UploadResult.NO_UPLOADS;
 
     // The context of the application, needed for certain function calls.
-    private Context m_context;
+    private final Context m_context;
 
     private ArrayList<UploadScheduler.UploadListener> m_onStatusChangedCallbacks = new ArrayList<>();
 
@@ -66,21 +54,21 @@ public class UploadScheduler {
     private ScheduledFuture<?> uploadHandle = null;
 
     /* Wifi Connectivity Monitoring
-    dont entirely understand but based off of following stack overflow post
+    don't entirely understand but based off of following stack overflow post
     https://stackoverflow.com/questions/54527301/connectivitymanager-networkcallback-onavailablenetwork-network-method-is */
-    private boolean conntectedToWifi = false;
+    private boolean connectedToWifi = false;
     private final NetworkRequest networkRequest = new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build();
     private final ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
         @Override
         public void onAvailable(@NonNull Network network){
             super.onAvailable(network);
-            conntectedToWifi = true;
+            connectedToWifi = true;
         }
 
         @Override
         public void onLost(@NonNull Network network) {
             super.onLost(network);
-            conntectedToWifi = false;
+            connectedToWifi = false;
         }
     };
     private final ConnectivityManager connectivityManager;
@@ -88,6 +76,8 @@ public class UploadScheduler {
     public UploadScheduler(Context c) {
         m_context = c;
         connectivityManager = (ConnectivityManager) m_context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        //start monitoring wifi connection
+        connectivityManager.registerNetworkCallback(networkRequest, networkCallback);
     }
 
     // Adds listeners when the status changes
@@ -109,17 +99,14 @@ public class UploadScheduler {
     public void startUpload() {
         stopUpload();
 
-        //start monitoring wifi connection
-        connectivityManager.registerNetworkCallback(networkRequest, networkCallback);
-
         //first argument reads from the settings whether or not the user currently has uploading
         //with cellular enabled, second argument checks whether or not user is currently connected
         //to wifi
-        Log.d(TAG, "Are we connected to wifi: " + conntectedToWifi);
+        Log.d(TAG, "Are we connected to wifi: " + connectedToWifi);
         Log.d(TAG, "are we allowed to use cellular: " + Boolean.parseBoolean(Settings.getString("useCellular", "")));
 
         // Wifi is required and we are not connected
-        if(!Boolean.parseBoolean(Settings.getString("useCellular", "")) &&!conntectedToWifi) {
+        if(!Boolean.parseBoolean(Settings.getString("useCellular", "")) &&!connectedToWifi) {
             // FAIL
             uploadResult = UploadResult.WIFI_FAILURE;
             // Invoke listeners
@@ -142,8 +129,6 @@ public class UploadScheduler {
         uploadHandle.cancel(false);
         uploadHandle = null;
         uploadStatus = UploadStatus.IDLE;
-        //stopping wifi monitoring
-        connectivityManager.unregisterNetworkCallback(networkCallback);
         // Invoke listeners
         invokeListeners();
     }
@@ -160,7 +145,7 @@ public class UploadScheduler {
         //need to check for null files
         File[] files = dir.listFiles();
         //converting the files into a more iteration friendly datastructure
-        //i dont know if list is optimal or how much performance we losing using a list
+        //i don't know if list is optimal or how much performance we losing using a list
         LinkedList<File> fileList = new LinkedList<>(Arrays.asList(files));
         Log.d(TAG, "Found " + fileList.size() +  " files to upload");
 
@@ -208,6 +193,11 @@ public class UploadScheduler {
             return isCurrentlyIdle;
         }
 
-        return conntectedToWifi && isCurrentlyIdle;
+        return connectedToWifi && isCurrentlyIdle;
+    }
+
+    public void destroy() {
+        //stopping wifi monitoring
+        connectivityManager.unregisterNetworkCallback(networkCallback);
     }
 }
