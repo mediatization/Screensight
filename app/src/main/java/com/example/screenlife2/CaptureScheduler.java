@@ -199,8 +199,6 @@ public class CaptureScheduler {
             buffer.rewind();
             Log.d(TAG, "Took a capture");
             // Invoke the listeners
-            // TODO: INVOKE LISTENERS IS CAUSING AN ISSUE HERE
-            //  WE STILL NEED THIS THOUGH
             invokeListeners();
         }
     }
@@ -221,15 +219,15 @@ public class CaptureScheduler {
         encryptImage(bitmap, "pause");
     }
     private void encryptImage(Bitmap bitmap, String descriptor) {
-        String hash = Settings.getString("hash", "00000000").substring(0, 8);
-        String keyRaw = Settings.getString("key", "");
+        String hash = Constants.USER_HASHED_KEY;
+        String keyRaw = Constants.USER_KEY;
         byte[] key = Converter.hexStringToByteArray(keyRaw);
         FileOutputStream fos = null;
         Date date = new Date();
         String dir = m_context.getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + "/screenLife";
         String dir2 = dir + "/images";
         String dir3 = dir + "/encrypt";
-        String screenshot = "/" + hash + "_" + sdf.format(date) + "_" + descriptor + ".png";
+        String screenshot = "/" + hash.substring(0,8) + "_" + sdf.format(date) + "_" + descriptor + ".png";
 
         try {
             if (keyRaw != "") {
@@ -244,7 +242,9 @@ public class CaptureScheduler {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 70, fos);
                 try {
                     Encryptor.encryptFile(key, screenshot, dir2 + screenshot, dir3 + screenshot);
-                    Log.d(TAG, "Encryption done with key " + Arrays.toString(key));
+                    Log.d(TAG, "Encryption with hash " + hash);
+                    Log.d(TAG, "Encryption with raw key " + keyRaw);
+                    Log.d(TAG, "Encryption with key " + Arrays.toString(key));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -282,6 +282,15 @@ public class CaptureScheduler {
     }
     public int getNumCaptured(){
         return getCaptures().length;
+    }
+    public int getSizeCapturedKB()
+    {
+        int toReturn = 0;
+        File[] captures = getCaptures();
+        for (File capture : captures) {
+            toReturn += Integer.parseInt(String.valueOf(capture.length() / 1024));
+        }
+        return toReturn;
     }
     public CaptureStatus getCaptureStatus() { return m_captureStatus; }
 

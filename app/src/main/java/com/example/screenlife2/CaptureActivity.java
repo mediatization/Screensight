@@ -32,6 +32,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.Locale;
+
 public class CaptureActivity extends AppCompatActivity {
     private boolean m_isActivityVisible = false;
     private static final String TAG = "MainActivity";
@@ -40,11 +42,12 @@ public class CaptureActivity extends AppCompatActivity {
     private ImageView m_blackOutPanel;
     private Button m_startStopCaptureButton;
     private Button m_resumePauseCaptureButton;
+    private TextView m_captureStatusDisplay;
+    private TextView m_captureNumberLabel;
+    private TextView m_captureSizeLabel;
     private Button m_uploadButton;
-    private TextView m_captureStatusText;
-    private TextView m_numCapturedFilesText;
-    private TextView m_uploadStatusText;
-    private TextView m_uploadResultText;
+    private TextView m_uploadStatusDisplay;
+    private TextView m_uploadResultLabel;
 
 
     /** Service Members*/
@@ -115,12 +118,31 @@ public class CaptureActivity extends AppCompatActivity {
                     if (!m_isActivityVisible)
                         return;
 
-                    m_captureStatusText.setText(status.toString());
-                    m_numCapturedFilesText.setText(Integer.toString(numCaptured));
+                    // Update file size label
+                    m_captureStatusDisplay.setText(status.toString());
+                    float fileSize = m_captureService.getSizeCapturedKB();
+                    if (fileSize > 1024 * 1024 * 1024){
+                        m_captureSizeLabel.setText( getString(R.string.file_size_tb, fileSize / 1024 / 1024 / 1024));
+                    }
+                    else if (fileSize > 1024 * 1024){
+                        m_captureSizeLabel.setText( getString(R.string.file_size_gb, fileSize / 1024 / 1024));
+                    }
+                    else if (fileSize > 1024) {
+                        m_captureSizeLabel.setText( getString(R.string.file_size_mb, fileSize / 1024));
+                    }
+                    else{
+                        m_captureSizeLabel.setText( getString(R.string.file_size_kb, fileSize));
+                    }
+
+                    Log.d(TAG, "TEXT: " +  m_captureSizeLabel.getText().toString());
+
+                    // Update file number label
+                    m_captureNumberLabel.setText(getString(R.string.file_count, numCaptured));
+
 
                     switch (status) {
                         case CAPTURING:
-                            m_captureStatusText.setTextColor(Color.GREEN);
+                            m_captureStatusDisplay.setTextColor(Color.GREEN);
                             m_startStopCaptureButton.setText("STOP CAPTURE");
                             m_resumePauseCaptureButton.setText("PAUSE CAPTURE");
                             m_resumePauseCaptureButton.setVisibility(View.VISIBLE);
@@ -131,13 +153,13 @@ public class CaptureActivity extends AppCompatActivity {
                             }
                             break;
                         case STOPPED:
-                            m_captureStatusText.setTextColor(Color.RED);
+                            m_captureStatusDisplay.setTextColor(Color.RED);
                             m_startStopCaptureButton.setText("START CAPTURE");
                             m_resumePauseCaptureButton.setText("CAN'T PAUSE/RESUME");
                             m_resumePauseCaptureButton.setVisibility(View.INVISIBLE);
                             break;
                         case PAUSED:
-                            m_captureStatusText.setTextColor(Color.YELLOW);
+                            m_captureStatusDisplay.setTextColor(Color.YELLOW);
                             m_startStopCaptureButton.setText("STOP CAPTURE");
                             m_resumePauseCaptureButton.setText("RESUME CAPTURE");
                             m_resumePauseCaptureButton.setVisibility(View.VISIBLE);
@@ -161,31 +183,25 @@ public class CaptureActivity extends AppCompatActivity {
                         return;
 
                     Log.d(TAG, "Updating upload status to " + uploadStatus.toString());
-                    m_uploadStatusText.setText(uploadStatus.toString());
+                    m_uploadStatusDisplay.setText(uploadStatus.toString());
 
                     switch (uploadStatus) {
                         case IDLE:
-                            m_uploadStatusText.setTextColor(Color.BLACK);
+                            m_uploadStatusDisplay.setTextColor(Color.BLACK);
                             m_uploadButton.setText("START UPLOAD");
                             m_uploadButton.setVisibility(View.VISIBLE);
                             break;
                         case UPLOADING:
-                            m_uploadStatusText.setTextColor(Color.GREEN);
+                            m_uploadStatusDisplay.setTextColor(Color.GREEN);
                             m_uploadButton.setText("STOP UPLOAD");
                             m_uploadButton.setVisibility(View.VISIBLE);
                             break;
                     }
 
                     Log.d(TAG, "Updating upload result to " + uploadResult.toString());
-                    m_uploadResultText.setText(uploadResult.toString());
-                    switch (uploadResult) {
-                        case NO_UPLOADS:
-                            m_uploadResultText.setVisibility(View.INVISIBLE);
-                            break;
-                        default:
-                            m_uploadResultText.setVisibility(View.VISIBLE);
-                            break;
-                    }
+                    // TODO: FIX THIS TO DISPLAY UPLOAD PROGRESS OR LAST RESULT ***
+                    m_uploadResultLabel.setText(uploadResult.toString());
+
                 }
             });
         }
@@ -341,11 +357,12 @@ public class CaptureActivity extends AppCompatActivity {
         m_blackOutPanel = findViewById(R.id.m_blackOutPanel);
         m_startStopCaptureButton = findViewById(R.id.m_startStopCaptureButton);
         m_resumePauseCaptureButton = findViewById(R.id.m_resumePauseCaptureButton);
+        m_captureStatusDisplay = findViewById(R.id.m_captureStatusDisplay);
+        m_captureNumberLabel = findViewById(R.id.m_captureNumberLabel);
+        m_captureSizeLabel = findViewById(R.id.m_captureSizeLabel);
         m_uploadButton = findViewById(R.id.m_uploadButton);
-        m_captureStatusText = findViewById(R.id.m_captureStatusText);
-        m_numCapturedFilesText = findViewById(R.id.m_numCapturedFilesText);
-        m_uploadStatusText = findViewById(R.id.m_uploadStatusText);
-        m_uploadResultText = findViewById(R.id.m_uploadResultText);
+        m_uploadStatusDisplay = findViewById(R.id.m_uploadStatusDisplay);
+        m_uploadResultLabel = findViewById(R.id.m_uploadResultLabel);
         Log.d(TAG, "UI was hooked up");
         // Get screen density
         DisplayMetrics metrics = new DisplayMetrics();

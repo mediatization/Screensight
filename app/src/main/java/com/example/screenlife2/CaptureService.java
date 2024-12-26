@@ -147,6 +147,7 @@ public class CaptureService extends Service {
     }
     // Returns the number of captured files
     public int getNumCaptured() {return captureScheduler.getNumCaptured();}
+    public int getSizeCapturedKB() {return captureScheduler.getSizeCapturedKB();}
     // Returns the capture status
     public CaptureScheduler.CaptureStatus getCaptureStatus() { return captureScheduler.getCaptureStatus();}
 

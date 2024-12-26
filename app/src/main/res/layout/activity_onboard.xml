@@ -1,62 +1,140 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/light_gray_1"
     tools:context=".OnboardActivity">
 
     <LinearLayout
-        android:id="@+id/linearLayout"
-        android:layout_width="420dp"
-        android:layout_height="727dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.645"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.457">
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appbar"
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/light_blue_3">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:contentScrim="?attr/colorPrimary"
+                app:layout_scrollFlags="scroll|exitUntilCollapsed"
+
+                app:toolbarId="@+id/mainToolbar">
+
+
+                <androidx.appcompat.widget.Toolbar
+                    android:id="@+id/mainToolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:subtitle="by RPI Mediatization Lab and The ScreenLife Capture Team"
+                    app:subtitleTextAppearance="@style/TextAppearance.AppCompat.Body1"
+                    app:subtitleTextColor="@color/dark_gray_3"
+                    app:title="Screenlife Capture" />
+            </com.google.android.material.appbar.MaterialToolbar>
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <View
+            android:id="@+id/m_appBarShadow"
+            android:layout_width="match_parent"
+            android:layout_height="5dp"
+            android:background="@color/dark_gray_2" />
 
         <TextView
-            android:id="@+id/m_userKeyText"
-            android:layout_width="wrap_content"
+            android:id="@+id/m_captureStatusLabel"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="User Key" />
+            android:background="@color/dark_gray_1"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:text="Settings"
+            android:textAlignment="center"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-        <EditText
-            android:id="@+id/m_userKeyTextInput"
-            android:layout_width="wrap_content"
-            android:layout_height="72dp"
-            android:height="52dp"
-            android:hint="Enter Key"
-            android:inputType="text"
-            android:text="USER KEY INPUT" />
+        <Space
+            android:id="@+id/m_bracketSpaceCapture2"
+            android:layout_width="match_parent"
+            android:layout_height="30dp" />
 
-        <TextView
-            android:id="@+id/m_useCellularText"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/m_userKeyLayout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Use Cellular Data" />
+            android:orientation="vertical">
 
-        <ToggleButton
-            android:id="@+id/m_settingUseCellular"
-            android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/m_userKeyLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="User Key"
+                android:textAlignment="center"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/m_userKeyDisplay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/default_key_display"
+                android:textAlignment="center" />
+        </LinearLayout>
+
+        <Space
+            android:id="@+id/m_space1"
+            android:layout_width="match_parent"
+            android:layout_height="40dp" />
+
+        <LinearLayout
+            android:id="@+id/m_cellularLayout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="ToggleButton"
-            android:textOff="OFF"
-            android:textOn="ON" />
+            android:layout_gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/m_useCellularLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Use Cellular"
+                android:textAlignment="center"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <ToggleButton
+                android:id="@+id/m_useCellularButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="@drawable/rectangle_button"
+                android:text="ToggleButton"
+                android:textAlignment="center" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <Space
+            android:id="@+id/m_space2"
+            android:layout_width="wrap_content"
+            android:layout_height="80dp" />
 
         <Button
-            android:id="@+id/m_userKeySubmitButton"
+            android:id="@+id/m_saveButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/rectangle_button"
+            android:backgroundTint="@color/dark_blue_1"
             android:text="SAVE" />
 
     </LinearLayout>
@@ -69,10 +147,9 @@
         android:layout_marginBottom="16dp"
         android:clickable="true"
         android:focusable="true"
-        android:visibility="visible"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/linearLayout"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@android:drawable/screen_background_dark" />
 </androidx.constraintlayout.widget.ConstraintLayout>

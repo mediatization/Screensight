@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -23,7 +24,7 @@ import java.security.NoSuchAlgorithmException;
 public class OnboardActivity extends AppCompatActivity {
     private static final String TAG = "OnboardingActivity";
     private ImageView m_blackOutPanel;
-    private EditText m_userKeyTextInput;
+    private TextView m_userKeyDisplay;
     private ToggleButton m_settingUseCellularButton;
     private Button m_submitButton;
 
@@ -37,9 +38,9 @@ public class OnboardActivity extends AppCompatActivity {
 
         // Set up UI
         m_blackOutPanel = findViewById(R.id.m_blackOutPanel2);
-        m_userKeyTextInput = findViewById(R.id.m_userKeyTextInput);
-        m_settingUseCellularButton = findViewById(R.id.m_settingUseCellular);
-        m_submitButton = findViewById(R.id.m_userKeySubmitButton);
+        m_settingUseCellularButton = findViewById(R.id.m_useCellularButton);
+        m_submitButton = findViewById(R.id.m_saveButton);
+        m_userKeyDisplay = findViewById(R.id.m_userKeyDisplay);
         // Add submit button on click listener
         m_submitButton.setOnClickListener(view -> {
             if (trySubmitSettings()) {
@@ -53,7 +54,18 @@ public class OnboardActivity extends AppCompatActivity {
             }
         });
         // Fill in settings
-        m_userKeyTextInput.setText(Settings.getString("key", ""));
+        String rawKey = Constants.USER_KEY;
+        StringBuilder alteredKey = new StringBuilder();
+        for (int i = 0; i < 64; i+=8)
+        {
+            for (int j = 0; j < 4; j++)
+                alteredKey.append(rawKey.charAt(i+j)).append(" ");
+            alteredKey.append("-");
+            for (int j = 4; j < 8; j++)
+                alteredKey.append(" ").append(rawKey.charAt(i+j));
+            alteredKey.append('\n');
+        }
+        m_userKeyDisplay.setText(alteredKey);
         m_settingUseCellularButton.setChecked(Boolean.parseBoolean(Settings.getString("useCellular", "")));
         // Disable black out panel
         m_blackOutPanel.setVisibility(View.INVISIBLE);
@@ -98,22 +110,11 @@ public class OnboardActivity extends AppCompatActivity {
         // Handle no settings file
         if (!existed) {
             // Populate an empty settings file
-            Settings.setString("hash", "00000000");
-            Settings.setString("key", "0000000000000000000000000000000000000000000000000000000000000000");
             Settings.setString("useCellular", "false");
             Settings.save();
         }
         else{
             // Populate an empty settings file
-            if (Settings.getString("hash", "00000000").isEmpty())
-            {
-                Log.d(TAG, "Adding hash to Settings");
-                Settings.setString("hash", "00000000");
-            }
-            if (Settings.getString("key", "0000000000000000000000000000000000000000000000000000000000000000").length() != 64) {
-                Log.d(TAG, "Adding key to Settings");
-                Settings.setString("key", "0000000000000000000000000000000000000000000000000000000000000000");
-            }
             if (Settings.getString("useCellular", "").isEmpty()) {
                 Log.d(TAG, "Adding useCellular to Settings");
                 Settings.setString("useCellular", "false");
@@ -123,42 +124,9 @@ public class OnboardActivity extends AppCompatActivity {
     }
 
     private boolean trySubmitSettings (){
-        String key = m_userKeyTextInput.getText().toString();
-        String hash = "";
         String useCellular = Boolean.toString(m_settingUseCellularButton.isChecked());
-        Log.d(TAG, "Key has length " + key.length());
-        if (key.length() == 64) {
-            try {
-                Log.d(TAG, "getSHA " + getSHA(key));
-                Log.d(TAG, "hash " + toHexString(getSHA(key)));
-                hash = toHexString(getSHA(key));
-                // Set the settings
-                Settings.setString("key", key);
-                Settings.setString("hash", hash);
-                Settings.setString("useCellular", useCellular);
-                Settings.save();
-                return true;
-
-            } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            }
-        }
-        return false;
-    }
-
-
-    private byte[] getSHA(String input) throws NoSuchAlgorithmException {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        md.update(Converter.hexStringToByteArray(input));
-        return md.digest();
-    }
-
-    private String toHexString(byte[] hash) {
-        BigInteger num = new BigInteger(1, hash);
-        StringBuilder hexString = new StringBuilder(num.toString(16));
-        while (hexString.length() < 64) {
-            hexString.insert(0, '0');
-        }
-        return hexString.toString();
+        Settings.setString("useCellular", useCellular);
+        Settings.save();
+        return true;
     }
 }

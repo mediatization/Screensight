@@ -25,7 +25,7 @@ class Encryptor {
         FileInputStream fis = new FileInputStream(inPath);
         FileOutputStream fos = new FileOutputStream(outPath);
 
-        // Grab the first 10 chars of the filename
+        // Grab the filename by truncating the first part of the path (the '/' plus the hash slice)
         String fname = filename.substring(10);
         Log.d(TAG, "ENCRYPTING WITH FNAME " + fname);
         // Get 8 bytes from an encrypted version of fname, using SHA-256

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Shadow Layer -->
+    <item>
+        <shape>
+            <solid android:color="@color/dark_gray_1"/> <!-- Semi-transparent black for shadow -->
+            <corners android:radius="0dp"/>    <!-- Rounded corners (optional) -->
+        </shape>
+    </item>
+
+    <!-- Button Layer -->
+    <item android:left="4dp" android:top="4dp" android:right="4dp" android:bottom="4dp">
+        <shape>
+            <solid android:color="@color/light_blue_3"/>   <!-- Blue color for the button -->
+            <corners android:radius="0dp"/>    <!-- Same corner radius as shadow -->
+        </shape>
+    </item>
+</layer-list>
