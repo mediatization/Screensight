@@ -219,7 +219,7 @@ public class CaptureScheduler {
         encryptImage(bitmap, "pause");
     }
     private void encryptImage(Bitmap bitmap, String descriptor) {
-        String hash = Constants.USER_HASHED_KEY;
+        String hash = Constants.USER_HASH;
         String keyRaw = Constants.USER_KEY;
         byte[] key = Converter.hexStringToByteArray(keyRaw);
         FileOutputStream fos = null;

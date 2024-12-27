@@ -26,7 +26,7 @@ import okhttp3.OkHttpClient;
 public class UploadScheduler {
     private static final String TAG = "UploadScheduler";
     public interface UploadListener{
-        void onInvoke(UploadScheduler.UploadStatus uploadStatus, UploadScheduler.UploadResult uploadResult);
+        void onInvoke(UploadScheduler.UploadStatus uploadStatus, UploadScheduler.UploadResult uploadResult, UploadData uploadData);
     }
     public enum UploadStatus
     {
@@ -40,8 +40,23 @@ public class UploadScheduler {
         WIFI_FAILURE,
         NETWORK_FAILURE
     }
+    public static class UploadData
+    {
+        public int BatchesCurrent;
+        public int BatchesMax;
+        public int FilesCurrent;
+        public int FilesMax;
+        public UploadData (int bCurrent, int bMax, int fCurrent, int fMax)
+        {
+            BatchesCurrent = bCurrent;
+            BatchesMax = bMax;
+            FilesCurrent = fCurrent;
+            FilesMax = fMax;
+        }
+    }
     private UploadStatus uploadStatus = UploadStatus.IDLE;
     private UploadResult uploadResult = UploadResult.NO_UPLOADS;
+    private UploadData uploadData = new UploadData(0, 0, 0, 0);
 
     // The context of the application, needed for certain function calls.
     private final Context m_context;
@@ -91,7 +106,7 @@ public class UploadScheduler {
         Log.d(TAG, "Invoking listeners: " + m_onStatusChangedCallbacks.size());
         for(UploadScheduler.UploadListener listener : m_onStatusChangedCallbacks)
         {
-            listener.onInvoke(uploadStatus, uploadResult);
+            listener.onInvoke(uploadStatus, uploadResult, uploadData);
         }
     }
 
@@ -147,6 +162,13 @@ public class UploadScheduler {
         //converting the files into a more iteration friendly datastructure
         //i don't know if list is optimal or how much performance we losing using a list
         LinkedList<File> fileList = new LinkedList<>(Arrays.asList(files));
+        // update the upload data
+        uploadData.BatchesCurrent = 0;
+        uploadData.BatchesMax = (int) Math.ceil((float)fileList.size() / Constants.BATCH_SIZE);
+        uploadData.FilesCurrent = 0;
+        uploadData.FilesMax = fileList.size();
+
+
         Log.d(TAG, "Found " + fileList.size() +  " files to upload");
 
         //unsure what client does so leaving this as a method variable for the time being
@@ -165,6 +187,11 @@ public class UploadScheduler {
                 batch.addFile(file);
                 Log.d(TAG, "Adding file: " + file.toString() + "to batch");
             }
+            // Increment the current batches and files
+            uploadData.BatchesCurrent++;
+            uploadData.FilesCurrent = uploadData.FilesMax - fileList.size();
+            // Update the UI
+            invokeListeners();
 
             if (!batch.sendFiles()) {
                 //on failure notify user and stop the loop

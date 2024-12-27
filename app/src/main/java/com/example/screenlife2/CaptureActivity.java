@@ -173,7 +173,7 @@ public class CaptureActivity extends AppCompatActivity {
                 }
             });
         }
-        public void updateUploadUI(UploadScheduler.UploadStatus uploadStatus, UploadScheduler.UploadResult uploadResult) {
+        public void updateUploadUI(UploadScheduler.UploadStatus uploadStatus, UploadScheduler.UploadResult uploadResult, UploadScheduler.UploadData uploadData) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -190,18 +190,36 @@ public class CaptureActivity extends AppCompatActivity {
                             m_uploadStatusDisplay.setTextColor(Color.BLACK);
                             m_uploadButton.setText("START UPLOAD");
                             m_uploadButton.setVisibility(View.VISIBLE);
+                            // Update the upload result
+                            switch (uploadResult) {
+                                case NO_UPLOADS:
+                                    // Not uploading any files
+                                    m_uploadResultLabel.setText(getString(R.string.upload_no_uploads));
+                                    break;
+                                case SUCCESS:
+                                    // Uploaded files
+                                    m_uploadResultLabel.setText(getString(R.string.upload_success, uploadData.FilesMax, uploadData.BatchesMax));
+                                    break;
+                                case WIFI_FAILURE:
+                                    // Wifi failed trying to upload files
+                                    m_uploadResultLabel.setText(getString(R.string.upload_wifi_failure, uploadData.FilesMax, uploadData.BatchesMax));
+                                    break;
+                                case NETWORK_FAILURE:
+                                    // Network failed tyring to upload files
+                                    m_uploadResultLabel.setText(getString(R.string.upload_network_failure, uploadData.FilesMax, uploadData.BatchesMax));
+                                    break;
+                            }
                             break;
                         case UPLOADING:
                             m_uploadStatusDisplay.setTextColor(Color.GREEN);
                             m_uploadButton.setText("STOP UPLOAD");
                             m_uploadButton.setVisibility(View.VISIBLE);
+                            // Update the upload result be pending
+                            m_uploadResultLabel.setText(getString(R.string.upload_uploading, uploadData.FilesCurrent, uploadData.FilesMax, uploadData.BatchesCurrent, uploadData.BatchesMax));
                             break;
                     }
 
                     Log.d(TAG, "Updating upload result to " + uploadResult.toString());
-                    // TODO: FIX THIS TO DISPLAY UPLOAD PROGRESS OR LAST RESULT ***
-                    m_uploadResultLabel.setText(uploadResult.toString());
-
                 }
             });
         }

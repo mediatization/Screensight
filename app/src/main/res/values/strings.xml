@@ -6,4 +6,9 @@
     <string name="file_size_gb">%.2f kb</string>
     <string name="file_size_tb">%.2f tb</string>
     <string name="file_count">%1$d files</string>
+    <string name="upload_no_uploads">No files or batches to upload.</string>
+    <string name="upload_uploading">>Uploading file %1$d of %2$d, batch %3$d of %4$d.</string>
+    <string name="upload_success">Uploaded %1$d files in %2$d batches.</string>
+    <string name="upload_wifi_failure">Upload of %1$d files in %2$d batches failed due to wifi.</string>
+    <string name="upload_network_failure">Upload of %1$d files in %2$d batches failed due to network.</string>
 </resources>
