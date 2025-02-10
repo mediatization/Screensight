@@ -35,10 +35,10 @@
                     android:id="@+id/mainToolbar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:subtitle="by RPI Mediatization Lab and The ScreenLife Capture Team"
+                    app:subtitle="by The RPI Mediatization Lab"
                     app:subtitleTextAppearance="@style/TextAppearance.AppCompat.Body1"
                     app:subtitleTextColor="@color/dark_gray_3"
-                    app:title="Screenlife Capture" />
+                    app:title="Screensight" />
             </com.google.android.material.appbar.MaterialToolbar>
 
         </com.google.android.material.appbar.AppBarLayout>
