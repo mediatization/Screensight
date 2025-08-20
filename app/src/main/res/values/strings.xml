@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ScreenLife2</string>
+    <string name="app_name">ScreenSight</string>
     <string name="default_key_display">0 0 0 0 – 0 0 0 0\n0 0 0 0 – 0 0 0 0\n0 0 0 0 – 0 0 0 0\n0 0 0 0 – 0 0 0 0\n– – – – – – – – – – – –\n0 0 0 0 – 0 0 0 0\n0 0 0 0 – 0 0 0 0\n0 0 0 0 – 0 0 0 0\n0 0 0 0 – 0 0 0 0</string>
     <string name="file_size_kb">%.2f kb</string>
     <string name="file_size_mb">%.2f mb</string>
