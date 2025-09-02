@@ -27,6 +27,7 @@
                 app:contentScrim="?attr/colorPrimary"
                 app:layout_scrollFlags="scroll|exitUntilCollapsed"
 
+                app:titleTextColor="@color/black"
                 app:toolbarId="@+id/mainToolbar">
 
 
@@ -37,7 +38,8 @@
                     app:subtitle="by The RPI Mediatization Lab "
                     app:subtitleTextAppearance="@style/TextAppearance.AppCompat.Body1"
                     app:subtitleTextColor="@color/dark_gray_3"
-                    app:title="Screensight" />
+                    app:title="Screensight"
+                    app:titleTextColor="@color/black" />
             </com.google.android.material.appbar.MaterialToolbar>
 
         </com.google.android.material.appbar.AppBarLayout>
@@ -45,8 +47,7 @@
         <View
             android:id="@+id/m_appBarShadow"
             android:layout_width="match_parent"
-            android:layout_height="5dp"
-            android:background="@color/dark_gray_2" />
+            android:layout_height="5dp" />
 
         <TextView
             android:id="@+id/m_captureStatusLabel"
@@ -57,6 +58,7 @@
             android:paddingBottom="10dp"
             android:text="Settings"
             android:textAlignment="center"
+            android:textColor="@color/black"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -75,8 +77,10 @@
                 android:id="@+id/m_userKeyLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@color/dark_gray_1"
                 android:text="User Key"
                 android:textAlignment="center"
+                android:textColor="@color/black"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -85,7 +89,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/default_key_display"
-                android:textAlignment="center" />
+                android:textAlignment="center"
+                android:textColor="@color/black" />
         </LinearLayout>
 
         <Space
@@ -104,8 +109,10 @@
                 android:id="@+id/m_useCellularLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@color/dark_gray_1"
                 android:text="Use Cellular"
                 android:textAlignment="center"
+                android:textColor="@color/black"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -116,7 +123,8 @@
                 android:layout_gravity="center"
                 android:background="@drawable/rectangle_button"
                 android:text="ToggleButton"
-                android:textAlignment="center" />
+                android:textAlignment="center"
+                android:textColor="@color/black" />
 
             <Space
                 android:layout_width="match_parent"
