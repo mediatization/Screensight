@@ -1,8 +1,10 @@
 package com.example.screenlife2;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -287,7 +289,28 @@ public class CaptureActivity extends AppCompatActivity {
 
         // Log message indicating that the UI is being displayed
         Log.d(TAG, "Activity Created");
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        registerReceiver(screenStateReceiver, filter);
     }
+
+    private BroadcastReceiver screenStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+                Log.d(TAG, "EEPY MISSILE HOURS");
+                m_captureService.stopCapture();
+
+            } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
+                // Device waking up - recreate ImageReader and resume
+                Log.d(TAG, "WAKEY WAKEY EGGS AND BAKEY");
+                startMediaProjectionRequest();
+
+            }
+        }
+    };
 
     // Register a launcher for the permission request
     private final ActivityResultLauncher<String> requestNotificationLauncher =
@@ -344,7 +367,7 @@ public class CaptureActivity extends AppCompatActivity {
     private void startMediaProjectionRequest() {
         // Create an intent for the media projection permission
         if (m_projectionManager != null) {
-            Intent intent = null;
+            Intent intent;
             // Ask specifically for full screen projecting
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 intent = m_projectionManager.createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay());

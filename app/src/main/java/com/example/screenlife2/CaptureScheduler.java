@@ -15,7 +15,6 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
-import android.os.PowerManager;
 import android.util.Log;
 
 import java.io.File;
