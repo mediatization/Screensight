@@ -5,6 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Build;
@@ -161,5 +162,42 @@ public class CaptureService extends Service {
     public UploadScheduler.UploadStatus getUploadStatus() {return uploadScheduler.getUploadStatus();}
     public UploadScheduler.UploadResult getUploadResult() {return uploadScheduler.getUploadResult();}
     public boolean ableToUpload() {return uploadScheduler.ableToUpload();}
+
+    public void reminderToRestart() {
+        Intent intent = new Intent(this, CaptureActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        // Create a notification for the foreground service
+        PendingIntent pendingIntent;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {  // Android 12 and above
+            pendingIntent = PendingIntent.getActivity(
+                    this,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_IMMUTABLE
+            );
+        } else {
+            pendingIntent = PendingIntent.getActivity(
+                    this,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT
+            );
+        }
+
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Capture Service")
+                .setContentText("Please re-open ScreenSight to continue phone monitoring")
+                .setSmallIcon(R.raw.appicon)  // Add an icon for the notification
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(false)
+                .setOngoing(true)
+                .build();
+
+        // Get NotificationManager and show the notification
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(NOTIFICATION_ID+1, notification);
+    }
 
 }

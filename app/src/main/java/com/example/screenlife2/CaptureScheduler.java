@@ -165,11 +165,8 @@ public class CaptureScheduler {
         Log.d(TAG, "Taking a capture");
         if (!m_keyguardManager.isKeyguardLocked()) {
             Log.d(TAG, "Keyguard is unlocked");
-            // TODO: FIGURE OUT WHY THIS IS FAILING
-            //  SOMEHOW WE HAVE EITHER NO IMAGES OR TOO MANY IMAGES
-            //  MAYBE THE VIRTUAL DISPLAY ISN'T FEEDING IMAGES IN FAST ENOUGH?
-            //  INCREASING THE CAPTURE INTERVAL DID NOT HELP
-            //  IT LOOKS LIKE IT ONLY FINDS A NEW IMAGE WHEN THE PICTURE CHANGES
+            // One reason this can fail is if phone is put to sleep we lose our media projection token
+            // has expired, this can happen when phone is put to sleep
             Image image = m_imageReader.acquireLatestImage();
             Log.d(TAG, "Took an image");
             Log.d(TAG, "Max images " + m_imageReader.getMaxImages());

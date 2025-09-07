@@ -300,13 +300,13 @@ public class CaptureActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-                Log.d(TAG, "EEPY MISSILE HOURS");
                 m_captureService.stopCapture();
 
             } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
                 // Device waking up - recreate ImageReader and resume
-                Log.d(TAG, "WAKEY WAKEY EGGS AND BAKEY");
+                m_captureService.reminderToRestart();
                 startMediaProjectionRequest();
+
 
             }
         }
