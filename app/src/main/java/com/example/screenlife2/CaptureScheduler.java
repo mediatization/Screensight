@@ -3,6 +3,8 @@ package com.example.screenlife2;
 import static androidx.core.content.ContextCompat.getSystemService;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import android.accessibilityservice.AccessibilityService;
+
 import android.app.KeyguardManager;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -15,7 +17,11 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
+
+import android.os.Build;
+
 import android.util.Log;
+import android.view.Display;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -70,6 +76,9 @@ public class CaptureScheduler {
     private static final DateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
     private ArrayList<CaptureListener> m_onStatusChangedCallbacks = new ArrayList<>();
 
+    // optional field to accept an AccessibilityService, kept for compatibility
+    private AccessibilityService m_accessibilityService = null;
+
     public CaptureScheduler (Context context, int screenDensity, int resultCode, Intent intent){
         m_context = context;
         m_screenDensity = screenDensity;
@@ -78,18 +87,38 @@ public class CaptureScheduler {
         m_imageReader = ImageReader.newInstance(DISPLAY_WIDTH, DISPLAY_HEIGHT,
                 PixelFormat.RGBA_8888, 5);
         m_imageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
-          @Override
-          public void onImageAvailable(ImageReader reader) {
-              Log.d(TAG, "An image is available");
-          }
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+                Log.d(TAG, "An image is available");
+            }
         }, null);
-        m_mediaProjection = m_projectionManager.getMediaProjection(resultCode, intent);
-        m_mediaProjectionCallback = new MediaProjectionCallback();
-        m_mediaProjection.registerCallback(m_mediaProjectionCallback, null);
-        m_virtualDisplay = m_mediaProjection.createVirtualDisplay(TAG, DISPLAY_WIDTH,
-                DISPLAY_HEIGHT, m_screenDensity,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, m_imageReader.getSurface(),
-                null, null);
+
+        // If MediaProjection unavailable, we'll rely on accessibility when set via setter later
+        if (m_projectionManager != null && intent != null) {
+            m_mediaProjection = m_projectionManager.getMediaProjection(resultCode, intent);
+            if (m_mediaProjection != null) {
+                m_mediaProjectionCallback = new MediaProjectionCallback();
+                m_mediaProjection.registerCallback(m_mediaProjectionCallback, null);
+                m_virtualDisplay = m_mediaProjection.createVirtualDisplay(TAG, DISPLAY_WIDTH,
+                        DISPLAY_HEIGHT, m_screenDensity,
+                        DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, m_imageReader.getSurface(),
+                        null, null);
+            }
+        }
+
+        // If a CaptureScheduler was stored by the Accessibility service wiring helper, ensure it's discoverable
+        // (MyAccessibilityService sets CaptureSchedulerHolder.set(thisScheduler) when creating the scheduler.)
+    }
+
+    // Setter to provide an AccessibilityService instance (optional)
+    public void setAccessibilityService(AccessibilityService service) {
+        m_accessibilityService = service;
+    }
+
+    // Allow AccessibilityService (or other callers) to save a captured bitmap via the same pipeline
+    public void saveFromAccessibility(Bitmap bitmap, String descriptor) {
+        if (bitmap == null) return;
+        encryptImage(bitmap, descriptor);
     }
 
     public void destroy(){
@@ -162,12 +191,44 @@ public class CaptureScheduler {
     //
     private void takeCapture() {
         //android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_FOREGROUND);
+
+        // Unified capture entrypoint that prefers Accessibility (API33+) when available
         Log.d(TAG, "Taking a capture");
         if (!m_keyguardManager.isKeyguardLocked()) {
             Log.d(TAG, "Keyguard is unlocked");
-            // One reason this can fail is if phone is put to sleep we lose our media projection token
-            // has expired, this can happen when phone is put to sleep
-            Image image = m_imageReader.acquireLatestImage();
+
+            // Prefer the project's Accessibility service implementation if present
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                MyAccessibilityService svc = MyAccessibilityService.getInstance();
+                if (svc != null) {
+                    Log.d(TAG, "Delegating capture to MyAccessibilityService.requestScreenshot()");
+                    try {
+                        // Ask the accessibility service to take a screenshot; it will call back into
+                        // CaptureScheduler.saveFromAccessibility(bitmap, descriptor) when done.
+                        svc.requestScreenshot();
+                    } catch (Throwable t) {
+                        Log.e(TAG, "Error invoking MyAccessibilityService.requestScreenshot()", t);
+                        // fallback to media projection below
+                        captureViaMediaProjectionIfAvailable();
+                    }
+                    return; // asynchronous path dispatched
+                }
+            }
+
+// Otherwise, fallback to MediaProjection-based capture
+            captureViaMediaProjectionIfAvailable();
+        }
+    }
+
+
+    private void captureViaMediaProjectionIfAvailable() {
+        if (m_imageReader == null) {
+            Log.d(TAG, "ImageReader is null, cannot capture via MediaProjection");
+            return;
+        }
+        Image image = null;
+        try {
+            image = m_imageReader.acquireLatestImage();
             Log.d(TAG, "Took an image");
             Log.d(TAG, "Max images " + m_imageReader.getMaxImages());
             if (image == null) {
@@ -182,8 +243,6 @@ public class CaptureScheduler {
             int rowStride = planes[0].getRowStride();
             m_rowPadding = rowStride - m_pixelStride * DISPLAY_WIDTH;
             Log.d(TAG, "Got image vars");
-            image.close();
-            Log.d(TAG, "Closed an image");
 
             Bitmap bitmap = Bitmap.createBitmap(DISPLAY_WIDTH + m_rowPadding / m_pixelStride,
                     DISPLAY_HEIGHT, Bitmap.Config.ARGB_8888);
@@ -196,8 +255,16 @@ public class CaptureScheduler {
             Log.d(TAG, "Took a capture");
             // Invoke the listeners
             invokeListeners();
+            bitmap.recycle();
+        } catch (Exception e) {
+            Log.e(TAG, "Error during media projection capture", e);
+        } finally {
+            if (image != null) {
+                try { image.close(); } catch (Exception ex) { /* ignore */ }
+            }
         }
     }
+
     private void insertResumeImage()
     {
         //android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
@@ -226,7 +293,7 @@ public class CaptureScheduler {
         String screenshot = "/" + hash.substring(0,8) + "_" + sdf.format(date) + "_" + descriptor + ".png";
 
         try {
-            if (keyRaw != "") {
+            if (!keyRaw.isEmpty()) {
                 // LOOK FOR screenLife DIRECTORY
                 Settings.findOrCreateDirectory(dir);
                 // LOOK FOR images DIRECTORY
@@ -235,7 +302,7 @@ public class CaptureScheduler {
                 Settings.findOrCreateDirectory(dir3);
                 // Create the file output stream
                 fos = new FileOutputStream(dir2 + screenshot);
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 70, fos);
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
                 try {
                     Encryptor.encryptFile(key, screenshot, dir2 + screenshot, dir3 + screenshot);
                     Log.d(TAG, "Encryption with hash " + hash);
@@ -254,7 +321,7 @@ public class CaptureScheduler {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            bitmap.recycle();
+            try { bitmap.recycle(); } catch (Exception ex) { /* ignore */ }
         }
     }
     //
@@ -295,12 +362,26 @@ public class CaptureScheduler {
         @Override
         public void onStop() {
             Log.e(TAG, "I'm stopped");
+//            try {
+//                //destroyImageReader();
+//            } catch (RuntimeException e) {
+//                e.printStackTrace();
+//            }
             try {
-                //destroyImageReader();
+                // Ensure we stop scheduled captures when projection stops
+                stopCapture(); // EDIT: stop capturing when projection revoked
+                // If accessibility is available, we could continue capturing there
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    MyAccessibilityService svc = MyAccessibilityService.getInstance();
+                    if (svc != null) {
+                        Log.d(TAG, "MediaProjection stopped; accessibility fallback available");
+                        // Optionally restart capture using accessibility immediately
+                        startCapture();
+                    }
+                }
             } catch (RuntimeException e) {
                 e.printStackTrace();
             }
-
         }
     }
 }

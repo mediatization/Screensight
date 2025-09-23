@@ -299,16 +299,16 @@ public class CaptureActivity extends AppCompatActivity {
     private BroadcastReceiver screenStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-                m_captureService.stopCapture();
-
-            } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
-                // Device waking up - recreate ImageReader and resume
-                m_captureService.reminderToRestart();
-                startMediaProjectionRequest();
-
-
-            }
+//            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+//                m_captureService.stopCapture();
+//
+//            } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
+//                // Device waking up - recreate ImageReader and resume
+//                m_captureService.reminderToRestart();
+//                startMediaProjectionRequest();
+//
+//
+//            }
         }
     };
 

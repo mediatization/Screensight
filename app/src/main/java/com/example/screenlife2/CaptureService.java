@@ -33,6 +33,19 @@ public class CaptureService extends Service {
     // Whether the service has been started at least once
     public boolean Initialized = false;
 
+
+    // AccessibilityService
+    private static MyAccessibilityService accessibilityService;
+
+    public static void setAccessibilityService(MyAccessibilityService service) {
+        accessibilityService = service;
+        Log.d(TAG, "AccessibilityService registered in CaptureService");
+    }
+
+    public static MyAccessibilityService getAccessibilityService() {
+        return accessibilityService;
+    }
+
     // Create is called first
     @Override
     public void onCreate(){
