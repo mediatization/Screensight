@@ -77,7 +77,7 @@ public class CaptureScheduler {
     private ArrayList<CaptureListener> m_onStatusChangedCallbacks = new ArrayList<>();
 
     // optional field to accept an AccessibilityService, kept for compatibility
-    private AccessibilityService m_accessibilityService = null;
+    private MyAccessibilityService accessibilityService;
 
     public CaptureScheduler (Context context, int screenDensity, int resultCode, Intent intent){
         m_context = context;
@@ -111,8 +111,9 @@ public class CaptureScheduler {
     }
 
     // Setter to provide an AccessibilityService instance (optional)
-    public void setAccessibilityService(AccessibilityService service) {
-        m_accessibilityService = service;
+    public void setAccessibilityService(MyAccessibilityService service) {
+        this.accessibilityService = service;
+        Log.d("CaptureScheduler", "AccessibilityService reference set");
     }
 
     // Allow AccessibilityService (or other callers) to save a captured bitmap via the same pipeline
@@ -194,30 +195,15 @@ public class CaptureScheduler {
 
         // Unified capture entrypoint that prefers Accessibility (API33+) when available
         Log.d(TAG, "Taking a capture");
-        if (!m_keyguardManager.isKeyguardLocked()) {
-            Log.d(TAG, "Keyguard is unlocked");
 
-            // Prefer the project's Accessibility service implementation if present
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                MyAccessibilityService svc = MyAccessibilityService.getInstance();
-                if (svc != null) {
-                    Log.d(TAG, "Delegating capture to MyAccessibilityService.requestScreenshot()");
-                    try {
-                        // Ask the accessibility service to take a screenshot; it will call back into
-                        // CaptureScheduler.saveFromAccessibility(bitmap, descriptor) when done.
-                        svc.requestScreenshot();
-                    } catch (Throwable t) {
-                        Log.e(TAG, "Error invoking MyAccessibilityService.requestScreenshot()", t);
-                        // fallback to media projection below
-                        captureViaMediaProjectionIfAvailable();
-                    }
-                    return; // asynchronous path dispatched
-                }
-            }
-
-// Otherwise, fallback to MediaProjection-based capture
-            captureViaMediaProjectionIfAvailable();
+        if (accessibilityService != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            Log.d("CaptureScheduler", "Trying accessibility screenshot");
+            accessibilityService.requestScreenshot();
+            return;
         }
+// Otherwise, fallback to MediaProjection-based capture
+        captureViaMediaProjectionIfAvailable();
+
     }
 
 
