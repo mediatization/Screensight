@@ -13,14 +13,8 @@ import android.os.IBinder;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
-import androidx.work.Constraints;
-import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.NetworkType;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
 
 import java.io.File;
-import java.util.concurrent.TimeUnit;
 
 // A Service allows us to run functions in the background while the app is minimized.
 // We are using a bound service, which acts almost like a server.
@@ -42,10 +36,7 @@ public class CaptureService extends Service {
     // Create is called first
     @Override
     public void onCreate(){
-        //starts the timer to check every 15 min if app has been closed
-        scheduleInactivityCheck();
-
-        // Do nothing else
+        // Do nothing
     }
     // Then we should call start service
     @Override
@@ -207,34 +198,6 @@ public class CaptureService extends Service {
         // Get NotificationManager and show the notification
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(NOTIFICATION_ID+1, notification);
-    }
-
-    // Add this to your MyApp.onCreate() method
-    private void scheduleInactivityCheck() {
-
-        Log.d(TAG, "Starting worker task");
-
-        Constraints constraints = new Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
-                .setRequiresBatteryNotLow(false) // Important: set to false
-                .setRequiresCharging(false)      // Important: set to false
-                .setRequiresDeviceIdle(false)    // Important: set to false
-                .build();
-
-        PeriodicWorkRequest workRequest =
-                new PeriodicWorkRequest.Builder(
-                        InactivityCheckWorker.class,
-                        15, // 15 minutes
-                        TimeUnit.MINUTES
-                )
-                        .setConstraints(constraints)
-                        .build();
-
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                "inactivity_check_work",
-                ExistingPeriodicWorkPolicy.UPDATE, // Use UPDATE instead of REPLACE
-                workRequest
-        );
     }
 
 }

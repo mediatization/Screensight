@@ -14,12 +14,18 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.Constraints;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.NetworkType;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.TimeUnit;
 
 public class OnboardActivity extends AppCompatActivity {
     private static final String TAG = "OnboardingActivity";
@@ -69,6 +75,9 @@ public class OnboardActivity extends AppCompatActivity {
         m_settingUseCellularButton.setChecked(Boolean.parseBoolean(Settings.getString("useCellular", "")));
         // Disable black out panel
         m_blackOutPanel.setVisibility(View.INVISIBLE);
+
+        //starts the timer to check every 15 min if app has been closed
+        scheduleInactivityCheck();
 
         Log.d(TAG, "Activity Created");
     }
@@ -128,5 +137,32 @@ public class OnboardActivity extends AppCompatActivity {
         Settings.setString("useCellular", useCellular);
         Settings.save();
         return true;
+    }
+
+    private void scheduleInactivityCheck() {
+
+        Log.d(TAG, "Starting worker task");
+
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+                .setRequiresBatteryNotLow(false) // Important: set to false
+                .setRequiresCharging(false)      // Important: set to false
+                .setRequiresDeviceIdle(false)    // Important: set to false
+                .build();
+
+        PeriodicWorkRequest workRequest =
+                new PeriodicWorkRequest.Builder(
+                        InactivityCheckWorker.class,
+                        15, // 15 minutes
+                        TimeUnit.MINUTES
+                )
+                        .setConstraints(constraints)
+                        .build();
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                "inactivity_check_work",
+                ExistingPeriodicWorkPolicy.UPDATE, // Use UPDATE instead of REPLACE (change back to replace)
+                workRequest
+        );
     }
 }
