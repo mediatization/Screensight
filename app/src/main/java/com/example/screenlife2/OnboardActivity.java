@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,9 +21,6 @@ import androidx.work.WorkManager;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 
 public class OnboardActivity extends AppCompatActivity {
@@ -161,7 +157,7 @@ public class OnboardActivity extends AppCompatActivity {
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
                 "inactivity_check_work",
-                ExistingPeriodicWorkPolicy.UPDATE, // Use UPDATE instead of REPLACE (change back to replace)
+                ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
                 workRequest
         );
     }

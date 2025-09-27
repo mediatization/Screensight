@@ -1,6 +1,7 @@
 package com.example.screenlife2;
 
 
+import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -14,6 +15,8 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import java.util.List;
 
 public class InactivityCheckWorker extends Worker {
 
@@ -33,31 +36,60 @@ public class InactivityCheckWorker extends Worker {
 
         Log.d(TAG, "Inactivity Worker Running");
 
-        // Create notification channel
-        createNotificationChannel();
+        //if capture service is running we assume user intends to resume app at some point
+        boolean isAppRunning = isServiceRunning();
 
-        // Show notification
-        showNotification("Worker Notification", "This notification is from Worker!");
+        if (isAppRunning) {
+            Log.d(TAG, "App is currently running, no need to remind user to restart");
+        } else {
+            // Create notification channel
+            createNotificationChannel();
+
+            // Show notification
+            showNotification();
+        }
 
         return Result.success();
+    }
+
+    private boolean isServiceRunning() {
+        ActivityManager manager = (ActivityManager) getApplicationContext()
+                .getSystemService(Context.ACTIVITY_SERVICE);
+
+        if (manager == null) return false;
+
+        List<ActivityManager.RunningServiceInfo> runningServices = manager
+                .getRunningServices(Integer.MAX_VALUE);
+
+        if (runningServices == null) return false;
+
+        String serviceName = "CaptureService";
+
+        for (ActivityManager.RunningServiceInfo service : runningServices) {
+            if (serviceName.equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void createNotificationChannel() {
         // Create a notification channel for Android 8.0 and higher
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Inactivity Check Worker",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
             NotificationManager manager = context.getSystemService(NotificationManager.class);
             if (manager != null) {
+                NotificationChannel channel = new NotificationChannel(
+                        CHANNEL_ID,
+                        "Inactivity Check Worker",
+                        NotificationManager.IMPORTANCE_HIGH
+                );
                 manager.createNotificationChannel(channel);
             }
         }
     }
 
-    private void showNotification(String title, String message) {
+    private void showNotification() {
         Intent intent = new Intent(this.getApplicationContext(), CaptureActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
@@ -90,7 +122,7 @@ public class InactivityCheckWorker extends Worker {
                 .build();
 
         // Get NotificationManager and show the notification
-        NotificationManager notificationManager = (NotificationManager) context.getSystemService(NotificationManager.class);
+        NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
         notificationManager.notify(NOTIFICATION_ID, notification);
     }
 }
