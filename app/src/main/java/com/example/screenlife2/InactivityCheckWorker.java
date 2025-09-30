@@ -63,7 +63,7 @@ public class InactivityCheckWorker extends Worker {
 
         if (runningServices == null) return false;
 
-        String serviceName = CaptureService.class.getName();;
+        String serviceName = CaptureService.class.getName();
 
         for (ActivityManager.RunningServiceInfo service : runningServices) {
             if (serviceName.equals(service.service.getClassName())) {
