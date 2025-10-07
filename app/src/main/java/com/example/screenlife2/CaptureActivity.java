@@ -290,25 +290,34 @@ public class CaptureActivity extends AppCompatActivity {
         // Log message indicating that the UI is being displayed
         Log.d(TAG, "Activity Created");
 
+        //setting up broadcast receiver for phone waking up/going to sleep
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_SCREEN_ON);
         registerReceiver(screenStateReceiver, filter);
     }
 
+    //whenever the phone goes to sleep/wakes up our activity takes notice
+    //if this is a google pixel device we need to remind the user to restart recording
     private BroadcastReceiver screenStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-//            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-//                m_captureService.stopCapture();
-//
-//            } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
-//                // Device waking up - recreate ImageReader and resume
-//                m_captureService.reminderToRestart();
-//                startMediaProjectionRequest();
-//
-//
-//            }
+
+            //potentially change this so we do stop capturing whenever phone goes to sleep
+            //but only if phone is a google do we send notif, otherwise resume capture
+            //not sure enough on how captures are getting handled to know if this matters
+            if ("Google".equalsIgnoreCase(Build.MANUFACTURER)) {
+                if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+                        m_captureService.stopCapture();
+
+                } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
+                    // Device waking up - recreate ImageReader and resume
+                    m_captureService.reminderToRestart();
+                    //closing the app, prevents notification spam if user turns phone on/off rapidly
+                    finishAffinity();
+                }
+            }
+
         }
     };
 
