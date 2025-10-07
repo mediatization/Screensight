@@ -148,6 +148,25 @@
             android:textColorHint="@color/black"
             app:backgroundTint="@null" />
 
+        <!-- add somewhere sensible in activity_onboard.xml -->
+        <Button
+            android:id="@+id/btn_enable_accessibility"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/rectangle_button"
+            android:text="ENABLE ACCESSIBILITY"
+            android:textColor="@color/black"
+            app:backgroundTint="@null" />
+
+        <TextView
+            android:id="@+id/txt_accessibility_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="accessibility: unknown"
+            android:textColor="@color/black" />
+
     </LinearLayout>
 
     <ImageView

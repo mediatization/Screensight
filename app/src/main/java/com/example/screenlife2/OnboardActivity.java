@@ -25,10 +25,18 @@ import java.util.concurrent.TimeUnit;
 
 public class OnboardActivity extends AppCompatActivity {
     private static final String TAG = "OnboardingActivity";
+
     private ImageView m_blackOutPanel;
     private TextView m_userKeyDisplay;
     private ToggleButton m_settingUseCellularButton;
     private Button m_submitButton;
+
+    // new ui elements (may be null if layout not yet updated)
+    private Button m_enableAccessibilityButton;
+    private TextView m_accessibilityStatus;
+
+    // track previous accessibility state to avoid repeated toasts
+    private boolean m_wasAccessibilityEnabled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +51,19 @@ public class OnboardActivity extends AppCompatActivity {
         m_settingUseCellularButton = findViewById(R.id.m_useCellularButton);
         m_submitButton = findViewById(R.id.m_saveButton);
         m_userKeyDisplay = findViewById(R.id.m_userKeyDisplay);
+
+        // optional accessibility UI (if present in layout)
+        m_enableAccessibilityButton = findViewById(R.id.btn_enable_accessibility);
+        m_accessibilityStatus = findViewById(R.id.txt_accessibility_status);
+
+        // add click handler to open system accessibility settings
+        if (m_enableAccessibilityButton != null) {
+            m_enableAccessibilityButton.setOnClickListener(v -> {
+                // open accessibility settings so user can enable our service
+                startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            });
+        }
+
         // Add submit button on click listener
         m_submitButton.setOnClickListener(view -> {
             if (trySubmitSettings()) {
@@ -50,12 +71,12 @@ public class OnboardActivity extends AppCompatActivity {
                 Intent intent = new Intent(OnboardActivity.this, CaptureActivity.class);
                 OnboardActivity.this.startActivity(intent);
                 finish();
-            }
-            else {
+            } else {
                 Toast.makeText(OnboardActivity.this, "Settings incomplete", Toast.LENGTH_SHORT).show();
             }
         });
-        // Fill in settings
+
+        // Fill in settings: pretty-print the user key
         String rawKey = Constants.USER_KEY;
         StringBuilder alteredKey = new StringBuilder();
         for (int i = 0; i < 64; i+=8)
@@ -68,7 +89,9 @@ public class OnboardActivity extends AppCompatActivity {
             alteredKey.append('\n');
         }
         m_userKeyDisplay.setText(alteredKey);
+
         m_settingUseCellularButton.setChecked(Boolean.parseBoolean(Settings.getString("useCellular", "")));
+
         // Disable black out panel
         m_blackOutPanel.setVisibility(View.INVISIBLE);
 
@@ -76,6 +99,24 @@ public class OnboardActivity extends AppCompatActivity {
         scheduleInactivityCheck();
 
         Log.d(TAG, "Activity Created");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // check accessibility service state and update UI (if the helper is available)
+        boolean enabled = AccessibilityUtil.isAccessibilityServiceEnabled(this, MyAccessibilityService.class);
+
+        if (m_accessibilityStatus != null) {
+            m_accessibilityStatus.setText(enabled ? "accessibility: enabled" : "accessibility: disabled");
+        }
+
+        // only notify on transition to enabled to avoid spamming toasts on every resume
+        if (enabled && !m_wasAccessibilityEnabled) {
+            Toast.makeText(this, "accessibility service enabled", Toast.LENGTH_SHORT).show();
+        }
+        m_wasAccessibilityEnabled = enabled;
     }
 
     private void tryGetSettings(){
