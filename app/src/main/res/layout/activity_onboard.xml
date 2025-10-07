@@ -154,14 +154,18 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="enable accessibility" />
+            android:background="@drawable/rectangle_button"
+            android:text="ENABLE ACCESSIBILITY"
+            android:textColor="@color/black"
+            app:backgroundTint="@null" />
 
         <TextView
             android:id="@+id/txt_accessibility_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="accessibility: unknown" />
+            android:text="accessibility: unknown"
+            android:textColor="@color/black" />
 
     </LinearLayout>
 
