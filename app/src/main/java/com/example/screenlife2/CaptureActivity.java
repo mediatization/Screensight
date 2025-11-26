@@ -298,24 +298,18 @@ public class CaptureActivity extends AppCompatActivity {
     }
 
     //whenever the phone goes to sleep/wakes up our activity takes notice
-    //if this is a google pixel device we need to remind the user to restart recording
     private BroadcastReceiver screenStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
 
-            //potentially change this so we do stop capturing whenever phone goes to sleep
-            //but only if phone is a google do we send notif, otherwise resume capture
-            //not sure enough on how captures are getting handled to know if this matters
-            if ("Google".equalsIgnoreCase(Build.MANUFACTURER)) {
-                if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-                        m_captureService.stopCapture();
+            //the app in some scenarios may attempt to continue capturing screenshots
+            //even when the phone is asleep, so as best practice we stop the capture service
+            //whenever the phone is put to sleep
+            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+                    m_captureService.stopCapture();
 
-                } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
-                    // Device waking up - recreate ImageReader and resume
-                    m_captureService.reminderToRestart();
-                    //closing the app, prevents notification spam if user turns phone on/off rapidly
-                    finishAffinity();
-                }
+            } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
+                m_captureService.startCapture();
             }
 
         }
