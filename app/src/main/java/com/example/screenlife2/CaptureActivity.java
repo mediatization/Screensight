@@ -51,7 +51,6 @@ public class CaptureActivity extends AppCompatActivity {
     private TextView m_uploadStatusDisplay;
     private TextView m_uploadResultLabel;
 
-
     /** Service Members*/
     private CaptureService m_captureService = null;
     private final ServiceConnection captureServiceConnection = new ServiceConnection() {
@@ -148,11 +147,6 @@ public class CaptureActivity extends AppCompatActivity {
                             m_startStopCaptureButton.setText("STOP CAPTURE");
                             m_resumePauseCaptureButton.setText("PAUSE CAPTURE");
                             m_resumePauseCaptureButton.setVisibility(View.VISIBLE);
-                            //Seeing if conditions are met for an auto upload to start
-                            //
-                            if (numCaptured >= Constants.AUTO_UPLOAD_COUNT && m_captureService.ableToUpload()){
-                                m_captureService.startUpload();
-                            }
                             break;
                         case STOPPED:
                             m_captureStatusDisplay.setTextColor(Color.RED);

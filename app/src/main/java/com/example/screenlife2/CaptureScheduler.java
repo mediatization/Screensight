@@ -66,7 +66,6 @@ public class CaptureScheduler {
     private MediaProjectionCallback m_mediaProjectionCallback;
     // The image reader that allows us to take screenshots
     private ImageReader m_imageReader;
-    private KeyguardManager m_keyguardManager;
     private VirtualDisplay m_virtualDisplay;
     private static int m_screenDensity;
     private static int m_pixelStride;
@@ -79,11 +78,12 @@ public class CaptureScheduler {
     // optional field to accept an AccessibilityService, kept for compatibility
     private MyAccessibilityService accessibilityService;
 
-    public CaptureScheduler (Context context, int screenDensity, int resultCode, Intent intent){
+    private UploadScheduler m_uploadScheduler;
+
+    public CaptureScheduler (Context context, int screenDensity, int resultCode, Intent intent, UploadScheduler us){
         m_context = context;
         m_screenDensity = screenDensity;
         m_projectionManager = getSystemService(context, MediaProjectionManager.class);
-        m_keyguardManager = getSystemService(context, KeyguardManager.class);
         m_imageReader = ImageReader.newInstance(DISPLAY_WIDTH, DISPLAY_HEIGHT,
                 PixelFormat.RGBA_8888, 5);
         m_imageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
@@ -92,6 +92,7 @@ public class CaptureScheduler {
                 Log.d(TAG, "An image is available");
             }
         }, null);
+        m_uploadScheduler = us;
 
         // If MediaProjection unavailable, we'll rely on accessibility when set via setter later
         if (m_projectionManager != null && intent != null) {
@@ -201,13 +202,16 @@ public class CaptureScheduler {
             accessibilityService.requestScreenshot();
             return;
         }
-// Otherwise, fallback to MediaProjection-based capture
-        captureViaMediaProjectionIfAvailable();
+        // Otherwise, fallback to MediaProjection-based capture
+        mediaProjectionScreenshot();
 
+        if (this.getNumCaptured() >= Constants.AUTO_UPLOAD_COUNT && m_uploadScheduler.ableToUpload()) {
+            m_uploadScheduler.startUpload();
+        }
     }
 
 
-    private void captureViaMediaProjectionIfAvailable() {
+    private void mediaProjectionScreenshot() {
         if (m_imageReader == null) {
             Log.d(TAG, "ImageReader is null, cannot capture via MediaProjection");
             return;
@@ -348,11 +352,7 @@ public class CaptureScheduler {
         @Override
         public void onStop() {
             Log.e(TAG, "I'm stopped");
-//            try {
-//                //destroyImageReader();
-//            } catch (RuntimeException e) {
-//                e.printStackTrace();
-//            }
+
             try {
                 // Ensure we stop scheduled captures when projection stops
                 stopCapture(); // EDIT: stop capturing when projection revoked
@@ -362,7 +362,7 @@ public class CaptureScheduler {
                     if (svc != null) {
                         Log.d(TAG, "MediaProjection stopped; accessibility fallback available");
                         // Optionally restart capture using accessibility immediately
-                        startCapture();
+                        //startCapture();
                     }
                 }
             } catch (RuntimeException e) {

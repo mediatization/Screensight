@@ -38,6 +38,8 @@ public class OnboardActivity extends AppCompatActivity {
     // track previous accessibility state to avoid repeated toasts
     private boolean m_wasAccessibilityEnabled = false;
 
+    //TODO: copy accessibility settings for battery use settings
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
