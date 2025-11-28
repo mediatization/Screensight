@@ -1,9 +1,11 @@
 package com.example.screenlife2;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -30,15 +32,15 @@ public class OnboardActivity extends AppCompatActivity {
     private TextView m_userKeyDisplay;
     private ToggleButton m_settingUseCellularButton;
     private Button m_submitButton;
-
-    // new ui elements (may be null if layout not yet updated)
     private Button m_enableAccessibilityButton;
     private TextView m_accessibilityStatus;
 
     // track previous accessibility state to avoid repeated toasts
     private boolean m_wasAccessibilityEnabled = false;
+    
+    private Button m_enablebatteryLifeButton;
 
-    //TODO: copy accessibility settings for battery use settings
+    private TextView m_batteryStatus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,11 +60,20 @@ public class OnboardActivity extends AppCompatActivity {
         m_enableAccessibilityButton = findViewById(R.id.btn_enable_accessibility);
         m_accessibilityStatus = findViewById(R.id.txt_accessibility_status);
 
+        m_batteryStatus = findViewById(R.id.btn_enable_battery);
+        m_batteryStatus = findViewById(R.id.txt_battery_status);
+
         // add click handler to open system accessibility settings
         if (m_enableAccessibilityButton != null) {
             m_enableAccessibilityButton.setOnClickListener(v -> {
                 // open accessibility settings so user can enable our service
                 startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            });
+        }
+
+        if (m_batteryStatus != null) {
+            m_batteryStatus.setOnClickListener(v -> {
+                startActivity(new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS));
             });
         }
 
@@ -113,6 +124,13 @@ public class OnboardActivity extends AppCompatActivity {
         if (m_accessibilityStatus != null) {
             m_accessibilityStatus.setText(enabled ? "accessibility: enabled" : "accessibility: disabled");
         }
+
+        if(m_batteryStatus != null) {
+            String packageName = getPackageName();
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            m_batteryStatus.setText(pm.isIgnoringBatteryOptimizations(packageName) ? "Battery Useage: enabled" : "Battery Useage: disabled");
+        }
+
 
         // only notify on transition to enabled to avoid spamming toasts on every resume
         if (enabled && !m_wasAccessibilityEnabled) {
