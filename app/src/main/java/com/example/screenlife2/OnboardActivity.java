@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.util.Log;
@@ -38,7 +39,7 @@ public class OnboardActivity extends AppCompatActivity {
     // track previous accessibility state to avoid repeated toasts
     private boolean m_wasAccessibilityEnabled = false;
     
-    private Button m_enablebatteryLifeButton;
+    private Button m_enableBatteryButton;
 
     private TextView m_batteryStatus;
 
@@ -60,7 +61,7 @@ public class OnboardActivity extends AppCompatActivity {
         m_enableAccessibilityButton = findViewById(R.id.btn_enable_accessibility);
         m_accessibilityStatus = findViewById(R.id.txt_accessibility_status);
 
-        m_batteryStatus = findViewById(R.id.btn_enable_battery);
+        m_enableBatteryButton = findViewById(R.id.btn_enable_battery);
         m_batteryStatus = findViewById(R.id.txt_battery_status);
 
         // add click handler to open system accessibility settings
@@ -71,9 +72,9 @@ public class OnboardActivity extends AppCompatActivity {
             });
         }
 
-        if (m_batteryStatus != null) {
-            m_batteryStatus.setOnClickListener(v -> {
-                startActivity(new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS));
+        if (m_enableBatteryButton != null) {
+            m_enableBatteryButton.setOnClickListener(v -> {
+                startActivity(new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:"+getPackageName())));
             });
         }
 
