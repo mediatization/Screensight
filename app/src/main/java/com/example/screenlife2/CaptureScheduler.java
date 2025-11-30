@@ -159,7 +159,7 @@ public class CaptureScheduler {
     public void startCapture() {
         Log.d(TAG, "Starting capture");
         stopCapture();
-        insertResumeImage();
+        //insertResumeImage();
         Runnable captureRunner = this::takeCapture;
         m_captureHandle = m_scheduler.scheduleWithFixedDelay(captureRunner, m_captureInterval, m_captureInterval, MILLISECONDS);
         m_captureStatus = CaptureStatus.CAPTURING;
@@ -170,7 +170,7 @@ public class CaptureScheduler {
     public void stopCapture(){
         if (m_captureHandle == null)
             return;
-        insertPauseImage();
+        //insertPauseImage();
         m_captureHandle.cancel(false);
         m_captureHandle = null;
         m_captureStatus = CaptureStatus.STOPPED;
@@ -198,12 +198,11 @@ public class CaptureScheduler {
         Log.d(TAG, "Taking a capture");
 
         if (accessibilityService != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            Log.d("CaptureScheduler", "Trying accessibility screenshot");
             accessibilityService.requestScreenshot();
-            return;
         }
-        // Otherwise, fallback to MediaProjection-based capture
-        mediaProjectionScreenshot();
+        else {
+            mediaProjectionScreenshot();
+        }
 
         if (this.getNumCaptured() >= Constants.AUTO_UPLOAD_COUNT && m_uploadScheduler.ableToUpload()) {
             m_uploadScheduler.startUpload();

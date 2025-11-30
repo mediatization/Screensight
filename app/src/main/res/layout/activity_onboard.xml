@@ -148,7 +148,6 @@
             android:textColorHint="@color/black"
             app:backgroundTint="@null" />
 
-        <!-- add somewhere sensible in activity_onboard.xml -->
         <Button
             android:id="@+id/btn_enable_accessibility"
             android:layout_width="wrap_content"
@@ -171,17 +170,18 @@
             android:id="@+id/btn_enable_battery"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
+            android:layout_gravity="center_horizontal"
             android:background="@drawable/rectangle_button"
+            android:backgroundTint="@null"
             android:text="Enable Battery Useage"
             android:textColor="@color/black"
-            tools:backgroundTint="@null" />
+            app:backgroundTint="@null" />
 
         <TextView
             android:id="@+id/txt_battery_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
+            android:layout_gravity="center_horizontal"
             android:text="Battery Useage: unknown"
             android:textColor="@color/black" />
 
