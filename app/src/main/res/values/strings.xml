@@ -11,4 +11,5 @@
     <string name="upload_success">Uploaded %1$d files in %2$d batches.</string>
     <string name="upload_wifi_failure">Upload of %1$d files in %2$d batches failed due to wifi.</string>
     <string name="upload_network_failure">Upload of %1$d files in %2$d batches failed due to network.</string>
+    <string name="accessibility_service_description">Captures constantly.</string>
 </resources>

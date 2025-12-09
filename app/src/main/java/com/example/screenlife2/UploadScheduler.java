@@ -8,6 +8,7 @@ import android.net.NetworkRequest;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.work.ListenableWorker;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -157,8 +158,15 @@ public class UploadScheduler {
         //getting directory of where files are stored and making a list
         String dirString = m_context.getExternalFilesDir(null) + "/screenLife" + "/encrypt";
         File dir = new File(dirString);
-        //need to check for null files
+
         File[] files = dir.listFiles();
+
+        if (files == null) {
+            Log.d(TAG, "Could not find files");
+            this.stopUpload();
+            return;
+        }
+
         //converting the files into a more iteration friendly datastructure
         //i don't know if list is optimal or how much performance we losing using a list
         LinkedList<File> fileList = new LinkedList<>(Arrays.asList(files));
@@ -167,7 +175,6 @@ public class UploadScheduler {
         uploadData.BatchesMax = (int) Math.ceil((float)fileList.size() / Constants.BATCH_SIZE);
         uploadData.FilesCurrent = 0;
         uploadData.FilesMax = fileList.size();
-
 
         Log.d(TAG, "Found " + fileList.size() +  " files to upload");
 
