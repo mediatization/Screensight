@@ -179,10 +179,6 @@ public class CaptureService extends Service {
         Initialized = true;
         if (captureScheduler != null) captureScheduler.startCapture();
     }
-    // pauses capturing
-    public void pauseCapture(){
-        if (captureScheduler != null) captureScheduler.pauseCapture();
-    }
     // stops capturing
     public void stopCapture(){
         if (captureScheduler != null) captureScheduler.stopCapture();

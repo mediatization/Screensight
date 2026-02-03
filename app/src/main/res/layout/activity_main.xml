@@ -267,23 +267,6 @@
             android:layout_height="30dp" />
 
         <Button
-            android:id="@+id/m_resumePauseCaptureButton"
-            android:layout_width="170dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:background="@drawable/rectangle_button"
-            android:text="PAUSE CAPTURE"
-            android:textColor="@color/black"
-            android:textColorHighlight="@color/black"
-            android:textColorHint="@color/black"
-            app:backgroundTint="@null" />
-
-        <Space
-            android:id="@+id/m_space5"
-            android:layout_width="match_parent"
-            android:layout_height="30dp" />
-
-        <Button
             android:id="@+id/m_uploadButton"
             android:layout_width="170dp"
             android:layout_height="wrap_content"

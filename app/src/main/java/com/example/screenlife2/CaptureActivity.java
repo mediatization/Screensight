@@ -43,7 +43,6 @@ public class CaptureActivity extends AppCompatActivity {
     /** UI Members */
     private ImageView m_blackOutPanel;
     private Button m_startStopCaptureButton;
-    private Button m_resumePauseCaptureButton;
     private TextView m_captureStatusDisplay;
     private TextView m_captureNumberLabel;
     private TextView m_captureSizeLabel;
@@ -67,23 +66,20 @@ public class CaptureActivity extends AppCompatActivity {
                 Log.d(TAG, "Capture Service Started On Connection");
             }
             // Add the on-click events to the UI
-            m_startStopCaptureButton.setOnClickListener((View view) ->
-            {
-                if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.STOPPED) {
-                    m_captureService.startCapture();
-                } else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
-                    m_captureService.stopCapture();
-                } else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
-                    m_captureService.stopCapture();
+            m_startStopCaptureButton.setOnClickListener((View view) -> {
+
+                switch (m_captureService.getCaptureStatus()) {
+                    case STOPPED:
+                        m_captureService.startCapture();
+                        break;
+                    case CAPTURING:
+                        m_captureService.stopCapture();
+                        break;
+                    default:
+                        m_captureService.stopCapture();
+                        break;
                 }
-            });
-            m_resumePauseCaptureButton.setOnClickListener((View view) ->
-            {
-                if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.PAUSED) {
-                    m_captureService.startCapture();
-                } else if (m_captureService.getCaptureStatus() == CaptureScheduler.CaptureStatus.CAPTURING) {
-                    m_captureService.pauseCapture();
-                }
+
             });
             // Upload stuff
             m_captureService.addUploadListener(this::updateUploadUI);
@@ -145,20 +141,10 @@ public class CaptureActivity extends AppCompatActivity {
                         case CAPTURING:
                             m_captureStatusDisplay.setTextColor(Color.GREEN);
                             m_startStopCaptureButton.setText("STOP CAPTURE");
-                            m_resumePauseCaptureButton.setText("PAUSE CAPTURE");
-                            m_resumePauseCaptureButton.setVisibility(View.VISIBLE);
                             break;
                         case STOPPED:
                             m_captureStatusDisplay.setTextColor(Color.RED);
                             m_startStopCaptureButton.setText("START CAPTURE");
-                            m_resumePauseCaptureButton.setText("CAN'T PAUSE/RESUME");
-                            m_resumePauseCaptureButton.setVisibility(View.INVISIBLE);
-                            break;
-                        case PAUSED:
-                            m_captureStatusDisplay.setTextColor(Color.YELLOW);
-                            m_startStopCaptureButton.setText("STOP CAPTURE");
-                            m_resumePauseCaptureButton.setText("RESUME CAPTURE");
-                            m_resumePauseCaptureButton.setVisibility(View.VISIBLE);
                             break;
                         default:
                             Log.d(TAG, "UC ERROR ERROR ERROR!!!");
@@ -394,7 +380,6 @@ public class CaptureActivity extends AppCompatActivity {
         // Set up UI
         m_blackOutPanel = findViewById(R.id.m_blackOutPanel);
         m_startStopCaptureButton = findViewById(R.id.m_startStopCaptureButton);
-        m_resumePauseCaptureButton = findViewById(R.id.m_resumePauseCaptureButton);
         m_captureStatusDisplay = findViewById(R.id.m_captureStatusDisplay);
         m_captureNumberLabel = findViewById(R.id.m_captureNumberLabel);
         m_captureSizeLabel = findViewById(R.id.m_captureSizeLabel);

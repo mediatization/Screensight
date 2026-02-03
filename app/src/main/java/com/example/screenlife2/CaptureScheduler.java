@@ -48,12 +48,10 @@ public class CaptureScheduler {
     public enum CaptureStatus
     {
         STOPPED,
-        PAUSED,
         CAPTURING
     }
     private CaptureStatus m_captureStatus = CaptureStatus.STOPPED;
     private final long m_captureInterval = 3000;
-    private final long m_pauseDuration = 300000;
     // The scheduler
     private final ScheduledExecutorService m_scheduler =
             Executors.newScheduledThreadPool(1);
@@ -174,15 +172,6 @@ public class CaptureScheduler {
         m_captureHandle.cancel(false);
         m_captureHandle = null;
         m_captureStatus = CaptureStatus.STOPPED;
-        // Invoke listeners
-        invokeListeners();
-    }
-    // Stops capture and schedules to start
-    public void pauseCapture(){
-        stopCapture();
-        m_captureStatus = CaptureStatus.PAUSED;
-        Runnable capturePauser = this::startCapture;
-        m_captureHandle = m_scheduler.schedule(capturePauser, m_pauseDuration, MILLISECONDS);
         // Invoke listeners
         invokeListeners();
     }
