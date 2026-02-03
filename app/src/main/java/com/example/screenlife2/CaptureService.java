@@ -5,7 +5,6 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Build;
@@ -14,8 +13,6 @@ import android.util.Log;
 import android.graphics.Bitmap; // new: needed for handleAccessibilityScreenshot
 
 import androidx.core.app.NotificationCompat;
-
-import java.io.File;
 
 public class CaptureService extends Service {
     private static final String TAG = "CaptureService";
@@ -149,7 +146,7 @@ public class CaptureService extends Service {
         // cleanup schedulers safely
         try {
             if (captureScheduler != null) {
-                captureScheduler.stopCapture();
+                captureScheduler.stopCapture(false);
                 captureScheduler.destroy();
             }
         } catch (Exception e) { Log.e(TAG, "error stopping capture scheduler", e); }
@@ -180,8 +177,9 @@ public class CaptureService extends Service {
         if (captureScheduler != null) captureScheduler.startCapture();
     }
     // stops capturing
-    public void stopCapture(){
-        if (captureScheduler != null) captureScheduler.stopCapture();
+    public void stopCapture(boolean manualPause){
+        if (captureScheduler != null)
+            captureScheduler.stopCapture(manualPause);
     }
     // updates any listeners
     public void updateCapture() { if (captureScheduler != null) captureScheduler.updateCapture(); }

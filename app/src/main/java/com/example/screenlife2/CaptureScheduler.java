@@ -3,9 +3,6 @@ package com.example.screenlife2;
 import static androidx.core.content.ContextCompat.getSystemService;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-import android.accessibilityservice.AccessibilityService;
-
-import android.app.KeyguardManager;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -21,7 +18,6 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 
 import android.util.Log;
-import android.view.Display;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -156,8 +152,7 @@ public class CaptureScheduler {
     // Schedules to start
     public void startCapture() {
         Log.d(TAG, "Starting capture");
-        stopCapture();
-        //insertResumeImage();
+        stopCapture(false);
         Runnable captureRunner = this::takeCapture;
         m_captureHandle = m_scheduler.scheduleWithFixedDelay(captureRunner, m_captureInterval, m_captureInterval, MILLISECONDS);
         m_captureStatus = CaptureStatus.CAPTURING;
@@ -165,10 +160,11 @@ public class CaptureScheduler {
         invokeListeners();
     }
     // Stops capture and pause
-    public void stopCapture(){
+    public void stopCapture(boolean manualPause){
         if (m_captureHandle == null)
             return;
-        //insertPauseImage();
+        if (manualPause)
+            insertPauseImage();
         m_captureHandle.cancel(false);
         m_captureHandle = null;
         m_captureStatus = CaptureStatus.STOPPED;
@@ -241,15 +237,6 @@ public class CaptureScheduler {
                 try { image.close(); } catch (Exception ex) { /* ignore */ }
             }
         }
-    }
-
-    private void insertResumeImage()
-    {
-        //android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
-        Log.d(TAG, "Inserting resume image");
-        InputStream is = m_context.getResources().openRawResource(R.raw.resumerecord);
-        Bitmap bitmap = BitmapFactory.decodeStream(is);
-        encryptImage(bitmap, "resume");
     }
     private void insertPauseImage()
     {
@@ -343,7 +330,7 @@ public class CaptureScheduler {
 
             try {
                 // Ensure we stop scheduled captures when projection stops
-                stopCapture(); // EDIT: stop capturing when projection revoked
+                stopCapture(false); // EDIT: stop capturing when projection revoked
                 // If accessibility is available, we could continue capturing there
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     MyAccessibilityService svc = MyAccessibilityService.getInstance();

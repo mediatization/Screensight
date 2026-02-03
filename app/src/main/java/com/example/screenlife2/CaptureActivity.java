@@ -10,10 +10,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.projection.MediaProjectionConfig;
 import android.media.projection.MediaProjectionManager;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkCapabilities;
-import android.net.NetworkRequest;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,11 +26,8 @@ import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-
-import java.util.Locale;
 
 public class CaptureActivity extends AppCompatActivity {
     private boolean m_isActivityVisible = false;
@@ -73,10 +66,10 @@ public class CaptureActivity extends AppCompatActivity {
                         m_captureService.startCapture();
                         break;
                     case CAPTURING:
-                        m_captureService.stopCapture();
+                        m_captureService.stopCapture(true);
                         break;
                     default:
-                        m_captureService.stopCapture();
+                        m_captureService.stopCapture(true);
                         break;
                 }
 
@@ -286,7 +279,7 @@ public class CaptureActivity extends AppCompatActivity {
             //even when the phone is asleep, so as best practice we stop the capture service
             //whenever the phone is put to sleep
             if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-                    m_captureService.stopCapture();
+                    m_captureService.stopCapture(false);
 
             } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
                 m_captureService.startCapture();
