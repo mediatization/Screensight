@@ -69,7 +69,7 @@ public class CaptureScheduler {
     private static final DateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
     private ArrayList<CaptureListener> m_onStatusChangedCallbacks = new ArrayList<>();
 
-    // optional field to accept an AccessibilityService, kept for compatibility
+    //used by google pixel phones as media projection manager will go stale after phone falls asleep
     private MyAccessibilityService accessibilityService;
 
     private UploadScheduler m_uploadScheduler;
@@ -101,8 +101,6 @@ public class CaptureScheduler {
             }
         }
 
-        // If a CaptureScheduler was stored by the Accessibility service wiring helper, ensure it's discoverable
-        // (MyAccessibilityService sets CaptureSchedulerHolder.set(thisScheduler) when creating the scheduler.)
     }
 
     // Setter to provide an AccessibilityService instance (optional)
@@ -327,22 +325,7 @@ public class CaptureScheduler {
         @Override
         public void onStop() {
             Log.e(TAG, "I'm stopped");
-
-            try {
-                // Ensure we stop scheduled captures when projection stops
-                stopCapture(false); // EDIT: stop capturing when projection revoked
-                // If accessibility is available, we could continue capturing there
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    MyAccessibilityService svc = MyAccessibilityService.getInstance();
-                    if (svc != null) {
-                        Log.d(TAG, "MediaProjection stopped; accessibility fallback available");
-                        // Optionally restart capture using accessibility immediately
-                        //startCapture();
-                    }
-                }
-            } catch (RuntimeException e) {
-                e.printStackTrace();
-            }
+            stopCapture(false);
         }
     }
 }

@@ -252,9 +252,11 @@ public class CaptureActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         // Request notifications
         startNotificationRequest();
-        // Request media projection
-        m_projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
-        startMediaProjectionRequest();
+        // Request media projection if accessibility isn't enabled
+        if (!AccessibilityUtil.isAccessibilityServiceEnabled(this, MyAccessibilityService.class)) {
+            m_projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
+            startMediaProjectionRequest();
+        }
         // Create
         super.onCreate(savedInstanceState);
         // Load the UI layout from res/layout/activity_main.xml
