@@ -109,7 +109,7 @@ public class MyAccessibilityService extends AccessibilityService {
                         // forward to CaptureService pipeline
                         CaptureService svc = CaptureService.getInstance();
                         if (svc != null) {
-                            svc.handleAccessibilityScreenshot(copy, "accessibility");
+                            svc.handleAccessibilityScreenshot(copy);
                             Log.d(TAG, "onSuccess: forwarded screenshot to CaptureService");
                         } else {
                             // no service available - log and recycle bitmap

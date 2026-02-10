@@ -22,8 +22,7 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 
 // The main upload service
-// is responsible for actually uploading, uploadService is what allows this to
-// run asynchronously
+// is responsible for actually uploading, captureScheduler is what allows this to run asynchronously
 public class UploadScheduler {
     private static final String TAG = "UploadScheduler";
     public interface UploadListener{
@@ -121,6 +120,8 @@ public class UploadScheduler {
         Log.d(TAG, "Are we connected to wifi: " + connectedToWifi);
         Log.d(TAG, "are we allowed to use cellular: " + Boolean.parseBoolean(Settings.getString("useCellular", "")));
 
+        uploadResult = UploadResult.NO_UPLOADS;
+
         // Wifi is required and we are not connected
         if(!Boolean.parseBoolean(Settings.getString("useCellular", "")) &&!connectedToWifi) {
             // FAIL
@@ -208,7 +209,10 @@ public class UploadScheduler {
         }
 
         //updating uploadStatus
-        if(uploadResult != UploadResult.NETWORK_FAILURE) uploadResult = UploadResult.SUCCESS;
+        if(uploadResult != UploadResult.NETWORK_FAILURE)
+            uploadResult = UploadResult.SUCCESS;
+
+
 
         //stopping upload
         //no need to invoke listeners as stopUpload does that for us

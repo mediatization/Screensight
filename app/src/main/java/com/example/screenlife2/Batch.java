@@ -86,7 +86,12 @@ public class Batch {
         //if files were successfully sent delete them
         //and tell calling function upload finished
         if(code == 201) {
-            files.forEach(File::delete);
+            Log.d(TAG, "Attempting to delete files");
+            files.forEach( file -> {
+                if (!file.delete()) {
+                    Log.d(TAG, "Warning: Failed to delete file");
+                }
+            });
             return true;
         }
 

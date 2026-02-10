@@ -257,6 +257,13 @@ public class CaptureActivity extends AppCompatActivity {
             m_projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
             startMediaProjectionRequest();
         }
+        else {
+            //TODO: find a way to skip asking for media projection request if its not needed
+            //onResult(new ActivityResult(RESULT_OK, null));
+
+            m_projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
+            startMediaProjectionRequest();
+        }
         // Create
         super.onCreate(savedInstanceState);
         // Load the UI layout from res/layout/activity_main.xml
@@ -314,7 +321,7 @@ public class CaptureActivity extends AppCompatActivity {
                         // Permission granted
                         Toast.makeText(CaptureActivity.this, "Media Projection Permission Granted", Toast.LENGTH_SHORT).show();
                         // Now you can start the screen capture
-                        onResult(result, getIntent());
+                        onResult(result);
                     } else {
                         // Permission denied
                         Toast.makeText(CaptureActivity.this, "Permission Denied. Closing...", Toast.LENGTH_SHORT).show();
@@ -369,7 +376,7 @@ public class CaptureActivity extends AppCompatActivity {
         }, 2000); // 2-second delay to allow the user to read the message
     }
 
-    public void onResult(ActivityResult result, Intent intent)
+    public void onResult(ActivityResult result)
     {
         Log.d(TAG, "Calling onResult");
         // Set up UI

@@ -200,7 +200,7 @@ public class CaptureService extends Service {
     public boolean ableToUpload() {return uploadScheduler != null && uploadScheduler.ableToUpload();}
 
     // accessibility -> scheduler entrypoint, called by MyAccessibilityService when it has a bitmap
-    public void handleAccessibilityScreenshot(Bitmap bitmap, String descriptor) {
+    public void handleAccessibilityScreenshot(Bitmap bitmap) {
         // new: defensive null checks
         if (bitmap == null) {
             Log.w(TAG, "handleAccessibilityScreenshot: bitmap is null");
@@ -208,7 +208,7 @@ public class CaptureService extends Service {
         }
         if (captureScheduler != null) {
             // new: hand bitmap into same pipeline used by media projection
-            captureScheduler.saveFromAccessibility(bitmap, descriptor);
+            captureScheduler.saveFromAccessibility(bitmap, Constants.USER_ID);
             // also notify listeners that a capture occurred
             captureScheduler.updateCapture();
             Log.d(TAG, "handleAccessibilityScreenshot: forwarded bitmap to captureScheduler");

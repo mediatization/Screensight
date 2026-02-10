@@ -221,7 +221,7 @@ public class CaptureScheduler {
             Log.d(TAG, "Created a bitmap");
             bitmap.copyPixelsFromBuffer(buffer);
             Log.d(TAG, "Copied buffer to bitmap");
-            encryptImage(bitmap, "placeholder");
+            encryptImage(bitmap, Constants.USER_ID);
             Log.d(TAG, "Encrypted an image");
             buffer.rewind();
             Log.d(TAG, "Took a capture");
