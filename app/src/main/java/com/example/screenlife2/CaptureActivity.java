@@ -51,7 +51,6 @@ public class CaptureActivity extends AppCompatActivity {
             CaptureService.LocalBinder localBinder = (CaptureService.LocalBinder) iBinder;
             m_captureService = localBinder.getService();
             m_captureService.addCaptureListener(this::updateCaptureStatus);
-            Log.d(TAG, "Capture Service Connected");
             // Only start the capture service when it is active
             if (m_captureService != null && !m_captureService.Initialized && m_isActivityVisible) {
                 // Start the capturing
@@ -76,7 +75,6 @@ public class CaptureActivity extends AppCompatActivity {
             });
             // Upload stuff
             m_captureService.addUploadListener(this::updateUploadUI);
-            Log.d(TAG, "Upload Service Connected");
             // Update the UI for the upload
             if (m_captureService != null && m_isActivityVisible) {
                 m_captureService.updateUpload();
@@ -90,7 +88,6 @@ public class CaptureActivity extends AppCompatActivity {
                     m_captureService.stopUpload();
                 }
             });
-            Log.d(TAG, "UI On clicks were added");
         }
 
         @Override
@@ -102,8 +99,6 @@ public class CaptureActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Log.d(TAG, "Updating capture status to " + status.toString());
-                    Log.d(TAG, "Is activity active? " + Boolean.toString(m_isActivityVisible));
 
                     if (!m_isActivityVisible)
                         return;
@@ -124,8 +119,6 @@ public class CaptureActivity extends AppCompatActivity {
                         m_captureSizeLabel.setText( getString(R.string.file_size_kb, fileSize));
                     }
 
-                    Log.d(TAG, "TEXT: " +  m_captureSizeLabel.getText().toString());
-
                     // Update file number label
                     m_captureNumberLabel.setText(getString(R.string.file_count, numCaptured));
 
@@ -140,7 +133,7 @@ public class CaptureActivity extends AppCompatActivity {
                             m_startStopCaptureButton.setText("START CAPTURE");
                             break;
                         default:
-                            Log.d(TAG, "UC ERROR ERROR ERROR!!!");
+                            Log.d(TAG, "Error: unknown status");
                             break;
                     }
                     // Disable the black out panel
@@ -152,7 +145,7 @@ public class CaptureActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Log.d(TAG, "Is activity active? " + Boolean.toString(m_isActivityVisible));
+                    Log.d(TAG, "Is activity active? " + m_isActivityVisible);
 
                     if (!m_isActivityVisible)
                         return;
@@ -194,7 +187,6 @@ public class CaptureActivity extends AppCompatActivity {
                             break;
                     }
 
-                    Log.d(TAG, "Updating upload result to " + uploadResult.toString());
                 }
             });
         }
@@ -378,7 +370,6 @@ public class CaptureActivity extends AppCompatActivity {
 
     public void onResult(ActivityResult result)
     {
-        Log.d(TAG, "Calling onResult");
         // Set up UI
         m_blackOutPanel = findViewById(R.id.m_blackOutPanel);
         m_startStopCaptureButton = findViewById(R.id.m_startStopCaptureButton);
@@ -388,7 +379,6 @@ public class CaptureActivity extends AppCompatActivity {
         m_uploadButton = findViewById(R.id.m_uploadButton);
         m_uploadStatusDisplay = findViewById(R.id.m_uploadStatusDisplay);
         m_uploadResultLabel = findViewById(R.id.m_uploadResultLabel);
-        Log.d(TAG, "UI was hooked up");
         // Get screen density
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);

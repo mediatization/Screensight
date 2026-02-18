@@ -119,7 +119,6 @@ public class UploadWorker extends Worker {
             for (int i = 0; i < Constants.BATCH_SIZE  && !fileList.isEmpty(); i++) {
                 File file = fileList.remove();
                 batch.addFile(file);
-                Log.d(TAG, "Adding file: " + file.toString() + "to batch");
             }
             // Increment the current batches and files
             uploadData.BatchesCurrent++;

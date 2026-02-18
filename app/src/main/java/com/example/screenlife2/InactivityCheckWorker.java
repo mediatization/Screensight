@@ -36,12 +36,7 @@ public class InactivityCheckWorker extends Worker {
 
         Log.d(TAG, "Inactivity Worker Running");
 
-        //if capture service is running we assume user intends to resume app at some point
-        boolean isAppRunning = isServiceRunning();
-
-        if (isAppRunning) {
-            Log.d(TAG, "App is currently running, no need to remind user to restart");
-        } else {
+        if (!isServiceRunning()) {
             // Create notification channel
             createNotificationChannel();
 

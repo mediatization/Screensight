@@ -141,7 +141,6 @@ public class OnboardActivity extends AppCompatActivity {
     }
 
     private void tryGetSettings(){
-        Log.d(TAG, "Calling startCheckSettings");
         // Check permissions
         if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
@@ -158,19 +157,15 @@ public class OnboardActivity extends AppCompatActivity {
         // If the file doesn't exist, create it
         boolean existed = jsonFile.exists();
         if (!existed) {
-            Log.i(TAG, "JSON file does not exist, creating a new one.");
+            Log.i(TAG, "JSON settings file does not exist, creating a new one.");
+
             try {
-                if (jsonFile.createNewFile()) {
-                    Log.i(TAG, "JSON file created: " + jsonFile.getAbsolutePath());
-                } else {
-                    Log.e(TAG, "Failed to create JSON file: " + jsonFile.getAbsolutePath());
+                if (!jsonFile.createNewFile()) {
+                    Log.e(TAG, "Failed to create JSON settings file: " + jsonFile.getAbsolutePath());
                 }
             } catch (IOException e) {
-                Log.e(TAG, "Error creating JSON file", e);
                 throw new RuntimeException(e);
             }
-        } else {
-            Log.i(TAG, "JSON file already exists: " + jsonFile.getAbsolutePath());
         }
         // Load the settings
         Settings.load(jsonFile);
@@ -183,7 +178,6 @@ public class OnboardActivity extends AppCompatActivity {
         else{
             // Populate an empty settings file
             if (Settings.getString("useCellular", "").isEmpty()) {
-                Log.d(TAG, "Adding useCellular to Settings");
                 Settings.setString("useCellular", "false");
             }
             Settings.save();
@@ -199,13 +193,11 @@ public class OnboardActivity extends AppCompatActivity {
 
     private void scheduleInactivityCheck() {
 
-        Log.d(TAG, "Starting worker task");
-
         Constraints constraints = new Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
-                .setRequiresBatteryNotLow(false) // Important: set to false
-                .setRequiresCharging(false)      // Important: set to false
-                .setRequiresDeviceIdle(false)    // Important: set to false
+                .setRequiresBatteryNotLow(false)
+                .setRequiresCharging(false)
+                .setRequiresDeviceIdle(false)
                 .build();
 
         PeriodicWorkRequest workRequest =

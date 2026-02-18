@@ -20,7 +20,6 @@ import android.os.Build;
 import android.util.Log;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -80,12 +79,7 @@ public class CaptureScheduler {
         m_projectionManager = getSystemService(context, MediaProjectionManager.class);
         m_imageReader = ImageReader.newInstance(DISPLAY_WIDTH, DISPLAY_HEIGHT,
                 PixelFormat.RGBA_8888, 5);
-        m_imageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
-            @Override
-            public void onImageAvailable(ImageReader reader) {
-                Log.d(TAG, "An image is available");
-            }
-        }, null);
+        m_imageReader.setOnImageAvailableListener(reader -> Log.d(TAG, "An image is available"), null);
         m_uploadScheduler = us;
 
         // If MediaProjection unavailable, we'll rely on accessibility when set via setter later
@@ -201,28 +195,21 @@ public class CaptureScheduler {
         Image image = null;
         try {
             image = m_imageReader.acquireLatestImage();
-            Log.d(TAG, "Took an image");
-            Log.d(TAG, "Max images " + m_imageReader.getMaxImages());
+            Log.d(TAG, "Found an image");
             if (image == null) {
                 Log.d(TAG, "Image was null, canceling capture...");
                 return;
             }
             Image.Plane[] planes = image.getPlanes();
-            Log.d(TAG, "Got planes");
             ByteBuffer buffer = planes[0].getBuffer();
-            Log.d(TAG, "Got a buffer");
             m_pixelStride = planes[0].getPixelStride();
             int rowStride = planes[0].getRowStride();
             m_rowPadding = rowStride - m_pixelStride * DISPLAY_WIDTH;
-            Log.d(TAG, "Got image vars");
 
             Bitmap bitmap = Bitmap.createBitmap(DISPLAY_WIDTH + m_rowPadding / m_pixelStride,
                     DISPLAY_HEIGHT, Bitmap.Config.ARGB_8888);
-            Log.d(TAG, "Created a bitmap");
             bitmap.copyPixelsFromBuffer(buffer);
-            Log.d(TAG, "Copied buffer to bitmap");
             encryptImage(bitmap, Constants.USER_ID);
-            Log.d(TAG, "Encrypted an image");
             buffer.rewind();
             Log.d(TAG, "Took a capture");
             // Invoke the listeners
@@ -256,25 +243,22 @@ public class CaptureScheduler {
         String screenshot = "/" + hash.substring(0,8) + "_" + sdf.format(date) + "_" + descriptor + ".png";
 
         try {
-            if (!keyRaw.isEmpty()) {
-                // LOOK FOR screenLife DIRECTORY
-                Settings.findOrCreateDirectory(dir);
-                // LOOK FOR images DIRECTORY
-                Settings.findOrCreateDirectory(dir2);
-                // LOOK FOR encrypt DIRECTORY
-                Settings.findOrCreateDirectory(dir3);
-                // Create the file output stream
-                fos = new FileOutputStream(dir2 + screenshot);
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
-                try {
-                    Encryptor.encryptFile(key, screenshot, dir2 + screenshot, dir3 + screenshot);
-                    Log.d(TAG, "Encryption with hash " + hash);
-                    Log.d(TAG, "Encryption with raw key " + keyRaw);
-                    Log.d(TAG, "Encryption with key " + Arrays.toString(key));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                File f = new File(dir2 + screenshot);
+            // LOOK FOR screenLife DIRECTORY
+            Settings.findOrCreateDirectory(dir);
+            // LOOK FOR images DIRECTORY
+            Settings.findOrCreateDirectory(dir2);
+            // LOOK FOR encrypt DIRECTORY
+            Settings.findOrCreateDirectory(dir3);
+            // Create the file output stream
+            fos = new FileOutputStream(dir2 + screenshot);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            try {
+                Encryptor.encryptFile(key, screenshot, dir2 + screenshot, dir3 + screenshot);
+                Log.d(TAG, "Encryption with hash " + hash);
+                Log.d(TAG, "Encryption with raw key " + keyRaw);
+                Log.d(TAG, "Encryption with key " + Arrays.toString(key));
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -293,15 +277,7 @@ public class CaptureScheduler {
         // TODO: CONSIDER SAVING THESE PATHS IN CONSTANTS
         String dir = m_context.getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + "/screenLife/encrypt";
         File directory = new File(dir);
-        FileFilter filter = new FileFilter()
-        {
-            @Override
-            public boolean accept(File file) {
-                return file.getName().endsWith(".png");
-            }
-        };
-        //Log.d(TAG, "Is " + dir + " a directory? " + directory.isDirectory());
-        File[] results = directory.listFiles(/*filter*/);
+        File[] results = directory.listFiles();
         if (results == null)
             results = new File[]{};
         return results;

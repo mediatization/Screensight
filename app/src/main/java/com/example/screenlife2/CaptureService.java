@@ -56,9 +56,7 @@ public class CaptureService extends Service {
     @Override
     public void onCreate(){
         super.onCreate();
-        // new: register running instance
         instance = this;
-        Log.d(TAG, "service onCreate - instance registered");
     }
 
     @Override
@@ -214,7 +212,7 @@ public class CaptureService extends Service {
             Log.d(TAG, "handleAccessibilityScreenshot: forwarded bitmap to captureScheduler");
         } else {
             // new: if scheduler not initialized yet, optionally save to temp or log
-            Log.w(TAG, "handleAccessibilityScreenshot: captureScheduler is null - cannot save screenshot now");
+            Log.d(TAG, "handleAccessibilityScreenshot: captureScheduler is null - cannot save screenshot now");
             // optional: store temporarily or drop - behavior depends on your needs
         }
     }
