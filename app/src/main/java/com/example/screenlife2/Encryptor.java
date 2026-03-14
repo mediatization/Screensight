@@ -1,6 +1,7 @@
 package com.example.screenlife2;
 
 
+import android.graphics.Bitmap;
 import android.util.Log;
 
 import java.io.File;
@@ -22,39 +23,61 @@ import javax.crypto.spec.SecretKeySpec;
 
 class Encryptor {
     private static final String TAG = "Encryptor";
-    //takes an unencrypted file saves an encrypted version of it, then deletes the original
-    static void encryptAndConsumeFile(byte[] key, String filename, String inPath, String outPath) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
-        FileInputStream fis = new FileInputStream(inPath);
-        FileOutputStream fos = new FileOutputStream(outPath);
 
-        // Grab the filename by truncating the first part of the path (the '/' plus the hash slice)
-        String fname = filename.substring(10);
-        Log.d(TAG, "ENCRYPTING WITH FNAME " + fname);
-        // Get 8 bytes from an encrypted version of fname, using SHA-256
-        byte[] ivBytes = Arrays.copyOfRange(getSHA(fname), 0, 7);
+    /**
+     * Saves a bitmap to a temporary PNG file, encrypts that file to a new location,
+     * and then deletes the temporary file to save space and ensure security.
+     */
+    static void encryptAndSaveBitmap(Bitmap bitmap, byte[] key, String filename, String unencryptedPath, String encryptedPath) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+        File inputFile = new File(unencryptedPath);
+        
+        try {
+            // 1. Save bitmap to unencrypted file
+            try (FileOutputStream fos = new FileOutputStream(inputFile)) {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            }
 
-        Log.d(TAG, "ENCRYPTING WITH KEY " + toHex(key));
-        Log.d(TAG, "ENCRYPTING WITH IV " + toHex(ivBytes));
+            // 2. Encrypt the file
+            try (FileInputStream fis = new FileInputStream(inputFile);
+                 FileOutputStream fos = new FileOutputStream(encryptedPath)) {
 
-        // Create a secret key spec using the key and AES/GCM/NoPadding algorithm
-        SecretKeySpec secretKeySpec = new SecretKeySpec(key,"AES/GCM/NoPadding");
-        // Create a GCMParameterSpec of length 16 * 8, with the iv bytes
-        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(16 * 8, ivBytes);
-        // Create an AES/GCM/NoPadding cipher
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        // Set the cypher to encrypt using the secret key spec and gcm paramter spec
-        cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, gcmParameterSpec);
-        // Run the file through the cipher and into a cipher output stream
-        CipherOutputStream cos = new CipherOutputStream(fos, cipher);
-        int b;
-        byte[] d = new byte[8];
-        while ((b = fis.read(d)) != -1) {
-            cos.write(d, 0, b);
+                // Grab the filename by truncating the first part of the path (the '/' plus the hash slice)
+                String fname = filename.length() > 10 ? filename.substring(10) : filename;
+                Log.d(TAG, "ENCRYPTING WITH FNAME " + fname);
+
+                // Get 8 bytes from an encrypted version of fname, using SHA-256
+                byte[] ivBytes = Arrays.copyOfRange(getSHA(fname), 0, 7);
+
+                Log.d(TAG, "ENCRYPTING WITH KEY " + toHex(key));
+                Log.d(TAG, "ENCRYPTING WITH IV " + toHex(ivBytes));
+
+                // Create a secret key spec using the key and AES/GCM/NoPadding algorithm
+                SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES/GCM/NoPadding");
+                // Create a GCMParameterSpec of length 16 * 8, with the iv bytes
+                GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(16 * 8, ivBytes);
+                // Create an AES/GCM/NoPadding cipher
+                Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+                // Set the cypher to encrypt using the secret key spec and gcm paramter spec
+                cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, gcmParameterSpec);
+
+                // Run the file through the cipher and into a cipher output stream
+                try (CipherOutputStream cos = new CipherOutputStream(fos, cipher)) {
+                    byte[] buffer = new byte[8192];
+                    int bytesRead;
+                    while ((bytesRead = fis.read(buffer)) != -1) {
+                        cos.write(buffer, 0, bytesRead);
+                    }
+                    cos.flush();
+                }
+            }
+        } finally {
+            // 3. Delete the original unencrypted file
+            if (inputFile.exists()) {
+                if (!inputFile.delete()) {
+                    Log.e(TAG, "Failed to delete temporary file: " + unencryptedPath);
+                }
+            }
         }
-        cos.flush();
-        cos.close();
-        fis.close();
-        new File(inPath).delete();
         Log.d(TAG, "ENCRYPTING FINISHED");
     }
 

@@ -20,9 +20,6 @@ import android.os.Build;
 import android.util.Log;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.text.DateFormat;
@@ -233,7 +230,6 @@ public class CaptureScheduler {
         String hash = Constants.USER_HASH;
         String keyRaw = Constants.USER_KEY;
         byte[] key = Converter.hexStringToByteArray(keyRaw);
-        FileOutputStream fos = null;
         Date date = new Date();
         String dir = m_context.getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + "/screenLife";
         String dir2 = dir + "/images";
@@ -241,33 +237,26 @@ public class CaptureScheduler {
         String screenshot = "/" + hash.substring(0,8) + "_" + sdf.format(date) + "_" + descriptor + ".png";
 
         try {
-            // LOOK FOR screenLife DIRECTORY
+            // Ensure directories exist
             Settings.findOrCreateDirectory(dir);
-            // LOOK FOR images DIRECTORY
             Settings.findOrCreateDirectory(dir2);
-            // LOOK FOR encrypt DIRECTORY
             Settings.findOrCreateDirectory(dir3);
-            // Create the file output stream
-            fos = new FileOutputStream(dir2 + screenshot);
-            //saves the unencrypted file for Encryptor to use
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
-            try {
-                Encryptor.encryptAndConsumeFile(key, screenshot, dir2 + screenshot, dir3 + screenshot);
-                Log.d(TAG, "Encryption with hash " + hash);
-                Log.d(TAG, "Encryption with raw key " + keyRaw);
-                Log.d(TAG, "Encryption with key " + Arrays.toString(key));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+
+            // Use the new Encryptor method to handle the full pipeline:
+            Encryptor.encryptAndSaveBitmap(bitmap, key, screenshot, dir2 + screenshot, dir3 + screenshot);
+
+            Log.d(TAG, "Encryption with hash " + hash);
+            Log.d(TAG, "Encryption with raw key " + keyRaw);
+            Log.d(TAG, "Encryption with key " + Arrays.toString(key));
+
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to encrypt image", e);
         } finally {
             try {
-                if (fos != null) fos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+                bitmap.recycle();
+            } catch (Exception ex) {
+                /* ignore */
             }
-            try { bitmap.recycle(); } catch (Exception ex) { /* ignore */ }
         }
     }
     //
