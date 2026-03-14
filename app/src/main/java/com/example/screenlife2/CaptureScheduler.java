@@ -155,8 +155,13 @@ public class CaptureScheduler {
     public void stopCapture(boolean manualPause){
         if (m_captureHandle == null)
             return;
-        if (manualPause)
-            insertPauseImage();
+        if (manualPause) {
+            //android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
+            Log.d(TAG, "Inserting pause image");
+            InputStream is = m_context.getResources().openRawResource(R.raw.pauserecord);
+            Bitmap bitmap = BitmapFactory.decodeStream(is);
+            encryptImage(bitmap, "pause");
+        }
         m_captureHandle.cancel(false);
         m_captureHandle = null;
         m_captureStatus = CaptureStatus.STOPPED;
@@ -223,14 +228,7 @@ public class CaptureScheduler {
             }
         }
     }
-    private void insertPauseImage()
-    {
-        //android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
-        Log.d(TAG, "Inserting pause image");
-        InputStream is = m_context.getResources().openRawResource(R.raw.pauserecord);
-        Bitmap bitmap = BitmapFactory.decodeStream(is);
-        encryptImage(bitmap, "pause");
-    }
+
     private void encryptImage(Bitmap bitmap, String descriptor) {
         String hash = Constants.USER_HASH;
         String keyRaw = Constants.USER_KEY;
@@ -251,9 +249,10 @@ public class CaptureScheduler {
             Settings.findOrCreateDirectory(dir3);
             // Create the file output stream
             fos = new FileOutputStream(dir2 + screenshot);
+            //saves the unencrypted file for Encryptor to use
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
             try {
-                Encryptor.encryptFile(key, screenshot, dir2 + screenshot, dir3 + screenshot);
+                Encryptor.encryptAndConsumeFile(key, screenshot, dir2 + screenshot, dir3 + screenshot);
                 Log.d(TAG, "Encryption with hash " + hash);
                 Log.d(TAG, "Encryption with raw key " + keyRaw);
                 Log.d(TAG, "Encryption with key " + Arrays.toString(key));

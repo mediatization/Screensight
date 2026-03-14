@@ -11,7 +11,6 @@ import android.view.accessibility.AccessibilityEvent;
 
 import androidx.annotation.RequiresApi;
 
-import java.io.IOException;
 import java.util.concurrent.Executor;
 
 /*

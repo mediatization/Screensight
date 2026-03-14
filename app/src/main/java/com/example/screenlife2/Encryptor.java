@@ -3,6 +3,7 @@ package com.example.screenlife2;
 
 import android.util.Log;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -21,7 +22,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 class Encryptor {
     private static final String TAG = "Encryptor";
-    static void encryptFile(byte[] key, String filename, String inPath, String outPath) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+    //takes an unencrypted file saves an encrypted version of it, then deletes the original
+    static void encryptAndConsumeFile(byte[] key, String filename, String inPath, String outPath) throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
         FileInputStream fis = new FileInputStream(inPath);
         FileOutputStream fos = new FileOutputStream(outPath);
 
@@ -52,6 +54,7 @@ class Encryptor {
         cos.flush();
         cos.close();
         fis.close();
+        new File(inPath).delete();
         Log.d(TAG, "ENCRYPTING FINISHED");
     }
 
