@@ -49,10 +49,6 @@ public class CaptureService extends Service {
         }
     }
 
-    public static MyAccessibilityService getAccessibilityService() {
-        return accessibilityService;
-    }
-
     @Override
     public void onCreate(){
         super.onCreate();
@@ -138,7 +134,7 @@ public class CaptureService extends Service {
     public void onDestroy(){
         Log.d(TAG, "Capture Service destroyed");
 
-        // new: clear singleton instance
+        // clear singleton instance
         if (instance == this) instance = null;
 
         // cleanup schedulers safely
@@ -205,15 +201,14 @@ public class CaptureService extends Service {
             return;
         }
         if (captureScheduler != null) {
-            // new: hand bitmap into same pipeline used by media projection
+            // hand bitmap into same pipeline used by media projection
             captureScheduler.saveFromAccessibility(bitmap, Constants.USER_ID);
             // also notify listeners that a capture occurred
             captureScheduler.updateCapture();
             Log.d(TAG, "handleAccessibilityScreenshot: forwarded bitmap to captureScheduler");
         } else {
-            // new: if scheduler not initialized yet, optionally save to temp or log
+            // if scheduler not initialized yet, optionally save to temp or log
             Log.d(TAG, "handleAccessibilityScreenshot: captureScheduler is null - cannot save screenshot now");
-            // optional: store temporarily or drop - behavior depends on your needs
         }
     }
 
