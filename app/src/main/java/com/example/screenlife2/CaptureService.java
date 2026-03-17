@@ -113,7 +113,7 @@ public class CaptureService extends Service {
         if (uploadScheduler == null)
             uploadScheduler = new UploadScheduler(getApplicationContext());
         if (captureScheduler == null)
-            captureScheduler = new CaptureScheduler(getApplicationContext(), screenDensity, resultCode, parceIntent, uploadScheduler);
+            captureScheduler = new CaptureScheduler(getApplicationContext(), screenDensity, resultCode, parceIntent);
 
         // if accessibilityService already registered, forward it into scheduler
         if (accessibilityService != null && captureScheduler != null) {
@@ -191,7 +191,6 @@ public class CaptureService extends Service {
     public void updateUpload() { if (uploadScheduler != null) uploadScheduler.updateUpload(); }
     public void stopUpload() { if (uploadScheduler != null) uploadScheduler.stopUpload(); }
     public UploadScheduler.UploadStatus getUploadStatus() {return uploadScheduler != null ? uploadScheduler.getUploadStatus() : UploadScheduler.UploadStatus.IDLE;}
-    public boolean ableToUpload() {return uploadScheduler != null && uploadScheduler.ableToUpload();}
 
     // accessibility -> scheduler entrypoint, called by MyAccessibilityService when it has a bitmap
     public void handleAccessibilityScreenshot(Bitmap bitmap) {

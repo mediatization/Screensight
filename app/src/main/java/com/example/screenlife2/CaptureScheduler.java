@@ -19,6 +19,12 @@ import android.os.Build;
 
 import android.util.Log;
 
+import androidx.work.Constraints;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
+
 import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -68,16 +74,13 @@ public class CaptureScheduler {
     //used by google pixel phones as media projection manager will go stale after phone falls asleep
     private MyAccessibilityService accessibilityService;
 
-    private UploadScheduler m_uploadScheduler;
-
-    public CaptureScheduler (Context context, int screenDensity, int resultCode, Intent intent, UploadScheduler us){
+    public CaptureScheduler (Context context, int screenDensity, int resultCode, Intent intent) {
         m_context = context;
         m_screenDensity = screenDensity;
         m_projectionManager = getSystemService(context, MediaProjectionManager.class);
         m_imageReader = ImageReader.newInstance(DISPLAY_WIDTH, DISPLAY_HEIGHT,
                 PixelFormat.RGBA_8888, 5);
         m_imageReader.setOnImageAvailableListener(reader -> Log.d(TAG, "An image is available"), null);
-        m_uploadScheduler = us;
 
         // If MediaProjection unavailable, we'll rely on accessibility when set via setter later
         if (m_projectionManager != null && intent != null) {
@@ -183,9 +186,32 @@ public class CaptureScheduler {
             mediaProjectionScreenshot();
         }
 
-        if (this.getNumCaptured() >= Constants.AUTO_UPLOAD_COUNT && m_uploadScheduler.ableToUpload()) {
-            m_uploadScheduler.startUpload();
+        if (this.getNumCaptured() >= Constants.AUTO_UPLOAD_COUNT) {
+            triggerUpload();
         }
+    }
+
+    private void triggerUpload() {
+        Log.d(TAG, "Triggering UploadWorker via WorkManager");
+        
+        Constraints.Builder constraintsBuilder = new Constraints.Builder();
+        
+        // If user hasn't enabled cellular, require WiFi (UNMETERED)
+        if (!Boolean.parseBoolean(Settings.getString("useCellular", ""))) {
+            constraintsBuilder.setRequiredNetworkType(NetworkType.UNMETERED);
+        } else {
+            constraintsBuilder.setRequiredNetworkType(NetworkType.CONNECTED);
+        }
+
+        OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(UploadWorker.class)
+                .setConstraints(constraintsBuilder.build())
+                .build();
+
+        WorkManager.getInstance(m_context).enqueueUniqueWork(
+                "UploadWork",
+                ExistingWorkPolicy.KEEP,
+                uploadWorkRequest
+        );
     }
 
 
