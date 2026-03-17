@@ -23,11 +23,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
+
+import java.util.Objects;
 
 public class CaptureActivity extends AppCompatActivity {
     private boolean m_isActivityVisible = false;
@@ -60,25 +63,14 @@ public class CaptureActivity extends AppCompatActivity {
             // Add the on-click events to the UI
             m_startStopCaptureButton.setOnClickListener((View view) -> {
 
-                switch (m_captureService.getCaptureStatus()) {
-                    case STOPPED:
-                        m_captureService.startCapture();
-                        break;
-                    case CAPTURING:
-                        m_captureService.stopCapture(true);
-                        break;
-                    default:
-                        m_captureService.stopCapture(true);
-                        break;
+                if (Objects.requireNonNull(m_captureService.getCaptureStatus()) == CaptureScheduler.CaptureStatus.STOPPED) {
+                    m_captureService.startCapture();
+                } else {
+                    m_captureService.stopCapture(true);
                 }
 
             });
-            // Upload stuff
-            m_captureService.addUploadListener(this::updateUploadUI);
-            // Update the UI for the upload
-            if (m_captureService != null && m_isActivityVisible) {
-                m_captureService.updateUpload();
-            }
+
             m_uploadButton.setOnClickListener((View view) ->
             {
                 if(m_captureService.getUploadStatus() != UploadScheduler.UploadStatus.UPLOADING) {
@@ -88,6 +80,15 @@ public class CaptureActivity extends AppCompatActivity {
                     m_captureService.stopUpload();
                 }
             });
+
+            // Observe WorkManager for real-time status updates
+            WorkManager.getInstance(CaptureActivity.this).getWorkInfosForUniqueWorkLiveData("UploadWork")
+                    .observe(CaptureActivity.this, workInfos -> {
+                        if (workInfos != null && !workInfos.isEmpty()) {
+                            WorkInfo workInfo = workInfos.get(0);
+                            updateWorkManagerUI(workInfo);
+                        }
+                    });
         }
 
         @Override
@@ -96,99 +97,75 @@ public class CaptureActivity extends AppCompatActivity {
         }
 
         public void updateCaptureStatus(CaptureScheduler.CaptureStatus status, int numCaptured) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
+            runOnUiThread(() -> {
 
-                    if (!m_isActivityVisible)
-                        return;
+                if (!m_isActivityVisible)
+                    return;
 
-                    // Update file size label
-                    m_captureStatusDisplay.setText(status.toString());
-                    float fileSize = m_captureService.getSizeCapturedKB();
-                    if (fileSize > 1024 * 1024 * 1024){
-                        m_captureSizeLabel.setText( getString(R.string.file_size_tb, fileSize / 1024 / 1024 / 1024));
-                    }
-                    else if (fileSize > 1024 * 1024){
-                        m_captureSizeLabel.setText( getString(R.string.file_size_gb, fileSize / 1024 / 1024));
-                    }
-                    else if (fileSize > 1024) {
-                        m_captureSizeLabel.setText( getString(R.string.file_size_mb, fileSize / 1024));
-                    }
-                    else{
-                        m_captureSizeLabel.setText( getString(R.string.file_size_kb, fileSize));
-                    }
-
-                    // Update file number label
-                    m_captureNumberLabel.setText(getString(R.string.file_count, numCaptured));
-
-
-                    switch (status) {
-                        case CAPTURING:
-                            m_captureStatusDisplay.setTextColor(Color.GREEN);
-                            m_startStopCaptureButton.setText("STOP CAPTURE");
-                            break;
-                        case STOPPED:
-                            m_captureStatusDisplay.setTextColor(Color.RED);
-                            m_startStopCaptureButton.setText("START CAPTURE");
-                            break;
-                        default:
-                            Log.d(TAG, "Error: unknown status");
-                            break;
-                    }
-                    // Disable the black out panel
-                    m_blackOutPanel.setVisibility(View.INVISIBLE);
+                // Update file size label
+                m_captureStatusDisplay.setText(status.toString());
+                float fileSize = m_captureService.getSizeCapturedKB();
+                if (fileSize > 1024 * 1024 * 1024){
+                    m_captureSizeLabel.setText( getString(R.string.file_size_tb, fileSize / 1024 / 1024 / 1024));
                 }
+                else if (fileSize > 1024 * 1024){
+                    m_captureSizeLabel.setText( getString(R.string.file_size_gb, fileSize / 1024 / 1024));
+                }
+                else if (fileSize > 1024) {
+                    m_captureSizeLabel.setText( getString(R.string.file_size_mb, fileSize / 1024));
+                }
+                else{
+                    m_captureSizeLabel.setText( getString(R.string.file_size_kb, fileSize));
+                }
+
+                // Update file number label
+                m_captureNumberLabel.setText(getString(R.string.file_count, numCaptured));
+
+
+                switch (status) {
+                    case CAPTURING:
+                        m_captureStatusDisplay.setTextColor(Color.GREEN);
+                        m_startStopCaptureButton.setText("STOP CAPTURE");
+                        break;
+                    case STOPPED:
+                        m_captureStatusDisplay.setTextColor(Color.RED);
+                        m_startStopCaptureButton.setText("START CAPTURE");
+                        break;
+                    default:
+                        Log.d(TAG, "Error: unknown status");
+                        break;
+                }
+                // Disable the black out panel
+                m_blackOutPanel.setVisibility(View.INVISIBLE);
             });
         }
-        public void updateUploadUI(UploadScheduler.UploadStatus uploadStatus, UploadScheduler.UploadResult uploadResult, UploadScheduler.UploadData uploadData) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Log.d(TAG, "Is activity active? " + m_isActivityVisible);
+        
+        private void updateWorkManagerUI(WorkInfo workInfo) {
+            if (!m_isActivityVisible) return;
 
-                    if (!m_isActivityVisible)
-                        return;
+            WorkInfo.State state = workInfo.getState();
+            Log.d(TAG, "WorkManager state: " + state);
 
-                    Log.d(TAG, "Updating upload status to " + uploadStatus.toString());
-                    m_uploadStatusDisplay.setText(uploadStatus.toString());
-
-                    switch (uploadStatus) {
-                        case IDLE:
-                            m_uploadStatusDisplay.setTextColor(Color.BLACK);
-                            m_uploadButton.setText("START UPLOAD");
-                            m_uploadButton.setVisibility(View.VISIBLE);
-                            // Update the upload result
-                            switch (uploadResult) {
-                                case NO_UPLOADS:
-                                    // Not uploading any files
-                                    m_uploadResultLabel.setText(getString(R.string.upload_no_uploads));
-                                    break;
-                                case SUCCESS:
-                                    // Uploaded files
-                                    m_uploadResultLabel.setText(getString(R.string.upload_success, uploadData.FilesMax, uploadData.BatchesMax));
-                                    break;
-                                case WIFI_FAILURE:
-                                    // Wifi failed trying to upload files
-                                    m_uploadResultLabel.setText(getString(R.string.upload_wifi_failure, uploadData.FilesMax, uploadData.BatchesMax));
-                                    break;
-                                case NETWORK_FAILURE:
-                                    // Network failed tyring to upload files
-                                    m_uploadResultLabel.setText(getString(R.string.upload_network_failure, uploadData.FilesMax, uploadData.BatchesMax));
-                                    break;
-                            }
-                            break;
-                        case UPLOADING:
-                            m_uploadStatusDisplay.setTextColor(Color.GREEN);
-                            m_uploadButton.setText("STOP UPLOAD");
-                            m_uploadButton.setVisibility(View.VISIBLE);
-                            // Update the upload result be pending
-                            m_uploadResultLabel.setText(getString(R.string.upload_uploading, uploadData.FilesCurrent, uploadData.FilesMax, uploadData.BatchesCurrent, uploadData.BatchesMax));
-                            break;
-                    }
-
+            if (state == WorkInfo.State.RUNNING) {
+                m_uploadStatusDisplay.setText("UPLOADING");
+                m_uploadStatusDisplay.setTextColor(Color.GREEN);
+                m_uploadButton.setText("STOP UPLOAD");
+                m_uploadResultLabel.setText("Uploading files...");
+            } else if (state == WorkInfo.State.ENQUEUED) {
+                m_uploadStatusDisplay.setText("PENDING");
+                m_uploadStatusDisplay.setTextColor(Color.BLUE);
+                m_uploadButton.setText("STOP UPLOAD");
+                m_uploadResultLabel.setText("Waiting for network conditions...");
+            } else {
+                m_uploadStatusDisplay.setText("IDLE");
+                m_uploadStatusDisplay.setTextColor(Color.BLACK);
+                m_uploadButton.setText("START UPLOAD");
+                if (state == WorkInfo.State.SUCCEEDED) {
+                    m_uploadResultLabel.setText("Last upload successful.");
+                } else if (state == WorkInfo.State.FAILED) {
+                    m_uploadResultLabel.setText("Last upload failed.");
                 }
-            });
+            }
         }
     };
 
@@ -212,7 +189,6 @@ public class CaptureActivity extends AppCompatActivity {
         }
         else if (m_captureService != null) {
             m_captureService.updateCapture();
-            m_captureService.updateUpload();
         }
         else{
             Log.d(TAG, "Capture service is null");
@@ -245,17 +221,8 @@ public class CaptureActivity extends AppCompatActivity {
         // Request notifications
         startNotificationRequest();
         // Request media projection if accessibility isn't enabled
-        if (!AccessibilityUtil.isAccessibilityServiceEnabled(this, MyAccessibilityService.class)) {
-            m_projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
-            startMediaProjectionRequest();
-        }
-        else {
-            //TODO: find a way to skip asking for media projection request if its not needed
-            //onResult(new ActivityResult(RESULT_OK, null));
-
-            m_projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
-            startMediaProjectionRequest();
-        }
+        m_projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
+        startMediaProjectionRequest();
         // Create
         super.onCreate(savedInstanceState);
         // Load the UI layout from res/layout/activity_main.xml
@@ -306,20 +273,17 @@ public class CaptureActivity extends AppCompatActivity {
     // Register a launcher for the permission request
     private final ActivityResultLauncher<Intent> requestMediaProjectionLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
-            new ActivityResultCallback<ActivityResult>() {
-                @Override
-                public void onActivityResult(ActivityResult result) {
-                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        // Permission granted
-                        Toast.makeText(CaptureActivity.this, "Media Projection Permission Granted", Toast.LENGTH_SHORT).show();
-                        // Now you can start the screen capture
-                        onResult(result);
-                    } else {
-                        // Permission denied
-                        Toast.makeText(CaptureActivity.this, "Permission Denied. Closing...", Toast.LENGTH_SHORT).show();
-                        // Close the app
-                        closeApp();
-                    }
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    // Permission granted
+                    Toast.makeText(CaptureActivity.this, "Media Projection Permission Granted", Toast.LENGTH_SHORT).show();
+                    // Now you can start the screen capture
+                    onResult(result);
+                } else {
+                    // Permission denied
+                    Toast.makeText(CaptureActivity.this, "Permission Denied. Closing...", Toast.LENGTH_SHORT).show();
+                    // Close the app
+                    closeApp();
                 }
             });
 
@@ -359,13 +323,9 @@ public class CaptureActivity extends AppCompatActivity {
 
     private void closeApp(){
         // Delay the closing to let the user see the message
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                // Close the app
-                finishAffinity(); // Closes the app and all activities in the task
-            }
-        }, 2000); // 2-second delay to allow the user to read the message
+        // Close the app
+        // Closes the app and all activities in the task
+        new Handler().postDelayed(this::finishAffinity, 2000); // 2-second delay to allow the user to read the message
     }
 
     public void onResult(ActivityResult result)
