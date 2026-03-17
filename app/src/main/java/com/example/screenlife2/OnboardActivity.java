@@ -146,7 +146,7 @@ public class OnboardActivity extends AppCompatActivity {
         super.onResume();
 
         // check accessibility service state and update UI (if the helper is available)
-        boolean enabled = AccessibilityUtil.isAccessibilityServiceEnabled(this, MyAccessibilityService.class);
+        boolean enabled = AccessibilityUtil.isAccessibilityServiceEnabled(this, CaptureAccessibilityService.class);
 
         if (m_accessibilityStatus != null) {
             m_accessibilityStatus.setText(enabled ? "accessibility: enabled" : "accessibility: disabled");

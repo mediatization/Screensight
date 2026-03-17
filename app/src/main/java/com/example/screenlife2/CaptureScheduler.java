@@ -71,10 +71,7 @@ public class CaptureScheduler {
     private static final DateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
     private ArrayList<CaptureListener> m_onStatusChangedCallbacks = new ArrayList<>();
 
-    //used by google pixel phones as media projection manager will go stale after phone falls asleep
-    private MyAccessibilityService accessibilityService;
-
-    public CaptureScheduler (Context context, int screenDensity, int resultCode, Intent intent) {
+    public CaptureScheduler (Context context, int screenDensity, int resultCode, Intent intent){
         m_context = context;
         m_screenDensity = screenDensity;
         m_projectionManager = getSystemService(context, MediaProjectionManager.class);
@@ -95,12 +92,6 @@ public class CaptureScheduler {
             }
         }
 
-    }
-
-    // Setter to provide an AccessibilityService instance (optional)
-    public void setAccessibilityService(MyAccessibilityService service) {
-        this.accessibilityService = service;
-        Log.d("CaptureScheduler", "AccessibilityService reference set");
     }
 
     // Allow AccessibilityService (or other callers) to save a captured bitmap via the same pipeline
@@ -164,7 +155,7 @@ public class CaptureScheduler {
         }
         m_captureHandle.cancel(false);
         m_captureHandle = null;
-        m_captureStatus = CaptureStatus.STOPPED;
+        m_captureStatus = STOPPED;
         // Invoke listeners
         invokeListeners();
     }
@@ -179,6 +170,7 @@ public class CaptureScheduler {
         // Unified capture entrypoint that prefers Accessibility (API33+) when available
         Log.d(TAG, "Taking a capture");
 
+        CaptureAccessibilityService accessibilityService = CaptureAccessibilityService.getInstance();
         if (accessibilityService != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             accessibilityService.requestScreenshot();
         }

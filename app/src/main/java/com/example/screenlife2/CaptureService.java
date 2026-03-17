@@ -10,7 +10,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
-import android.graphics.Bitmap; // new: needed for handleAccessibilityScreenshot
+import android.graphics.Bitmap;
 
 import androidx.core.app.NotificationCompat;
 
@@ -18,47 +18,29 @@ public class CaptureService extends Service {
     private static final String TAG = "CaptureService";
     private static final String CHANNEL_ID = "CaptureServiceChannel";
     private static final int NOTIFICATION_ID = 1;
-    // the scheduler used to take screenshots
+    
     private CaptureScheduler captureScheduler = null;
-    // the scheduler used to upload
     private UploadScheduler uploadScheduler = null;
-    // whether the service has been started at least once
     public boolean Initialized = false;
 
-    // accessibility service
-    private static MyAccessibilityService accessibilityService;
-
-    // singleton instance so other classes can reach the running CaptureService
     private static CaptureService instance = null;
 
-    // return the running service instance (may be null if not started/bound)
     public static CaptureService getInstance() {
         return instance;
-    }
-
-    // set accessibility service and forward to scheduler if available
-    public static void setAccessibilityService(MyAccessibilityService service) {
-        accessibilityService = service;
-        Log.d(TAG, "AccessibilityService registered in CaptureService");
-
-        // if a CaptureService instance and scheduler exist, forward the service to the scheduler
-        CaptureService svc = CaptureService.getInstance();
-        if (svc != null && svc.captureScheduler != null) {
-            svc.captureScheduler.setAccessibilityService(service);
-            Log.d(TAG, "forwarded accessibilityservice to captureScheduler");
-        }
     }
 
     @Override
     public void onCreate(){
         super.onCreate();
         instance = this;
+        
+        // Step 3: Formal registration for screenshots
+        CaptureAccessibilityService.registerListener(this::handleAccessibilityScreenshot);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Capture Service On Start was called");
-        // Create a notification channel for Android 8.0 and higher
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
@@ -71,59 +53,41 @@ public class CaptureService extends Service {
             }
         }
 
-        // Create a notification for the foreground service
         PendingIntent pendingIntent;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {  // Android 12 and above
-            pendingIntent = PendingIntent.getActivity(
-                    this,
-                    0,
-                    intent,
-                    PendingIntent.FLAG_IMMUTABLE
-            );
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
         } else {
-            pendingIntent = PendingIntent.getActivity(
-                    this,
-                    0,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT
-            );
+            pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Capture Service")
                 .setContentText("The service is running in the foreground")
-                .setSmallIcon(R.raw.appicon)  // Add an icon for the notification
+                .setSmallIcon(R.raw.appicon)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(false)
                 .setOngoing(true)
                 .build();
 
-        // Start the service in the foreground with the notification
         startForeground(NOTIFICATION_ID, notification);
         return Service.START_STICKY;
     }
 
-    // required function for Services to bind, call this after start
     @Override
     public IBinder onBind(Intent intent) {
         int screenDensity = intent.getIntExtra("screenDensity", 0);
         int resultCode = intent.getIntExtra("resultCode", -1);
         Intent parceIntent = intent.getParcelableExtra("intentData");
+        
         if (uploadScheduler == null)
             uploadScheduler = new UploadScheduler(getApplicationContext());
         if (captureScheduler == null)
             captureScheduler = new CaptureScheduler(getApplicationContext(), screenDensity, resultCode, parceIntent);
 
-        // if accessibilityService already registered, forward it into scheduler
-        if (accessibilityService != null && captureScheduler != null) {
-            captureScheduler.setAccessibilityService(accessibilityService);
-            Log.d(TAG, "onBind: forwarded existing accessibilityService to captureScheduler");
-        }
-
         Log.d(TAG, "Capture Service on bind was called");
         return new LocalBinder();
     }
+
     public class LocalBinder extends Binder {
         public CaptureService getService() {
             return CaptureService.this;
@@ -133,17 +97,17 @@ public class CaptureService extends Service {
     @Override
     public void onDestroy(){
         Log.d(TAG, "Capture Service destroyed");
-
-        // clear singleton instance
         if (instance == this) instance = null;
 
-        // cleanup schedulers safely
+        CaptureAccessibilityService.unregisterListener(this::handleAccessibilityScreenshot);
+
         try {
             if (captureScheduler != null) {
                 captureScheduler.stopCapture(false);
                 captureScheduler.destroy();
             }
         } catch (Exception e) { Log.e(TAG, "error stopping capture scheduler", e); }
+        
         try {
             if (uploadScheduler != null) {
                 uploadScheduler.stopUpload();
@@ -151,13 +115,8 @@ public class CaptureService extends Service {
             }
         } catch (Exception e) { Log.e(TAG, "error stopping upload scheduler", e); }
 
-        // clear accessibility reference if present (we'll let the accessibility service null itself too)
-        accessibilityService = null;
-
         super.onDestroy();
     }
-
-    /** Methods for the client */
 
     public void addCaptureListener(CaptureScheduler.CaptureListener listener){
         if (captureScheduler != null) captureScheduler.addListener(listener);
@@ -165,22 +124,17 @@ public class CaptureService extends Service {
     public void clearCaptureListeners(){
         if (captureScheduler != null) captureScheduler.clearListeners();
     }
-    // starts capturing
     public void startCapture(){
         Initialized = true;
         if (captureScheduler != null) captureScheduler.startCapture();
     }
-    // stops capturing
     public void stopCapture(boolean manualPause){
         if (captureScheduler != null)
             captureScheduler.stopCapture(manualPause);
     }
-    // updates any listeners
     public void updateCapture() { if (captureScheduler != null) captureScheduler.updateCapture(); }
-    // returns the number of captured files
     public int getNumCaptured() { if (captureScheduler != null) return captureScheduler.getNumCaptured(); return 0; }
     public int getSizeCapturedKB() { if (captureScheduler != null) return captureScheduler.getSizeCapturedKB(); return 0; }
-    // returns the capture status
     public CaptureScheduler.CaptureStatus getCaptureStatus() { return captureScheduler != null ? captureScheduler.getCaptureStatus() : CaptureScheduler.CaptureStatus.STOPPED; }
 
     public void addUploadListener(UploadScheduler.UploadListener listener){
@@ -192,23 +146,12 @@ public class CaptureService extends Service {
     public void stopUpload() { if (uploadScheduler != null) uploadScheduler.stopUpload(); }
     public UploadScheduler.UploadStatus getUploadStatus() {return uploadScheduler != null ? uploadScheduler.getUploadStatus() : UploadScheduler.UploadStatus.IDLE;}
 
-    // accessibility -> scheduler entrypoint, called by MyAccessibilityService when it has a bitmap
     public void handleAccessibilityScreenshot(Bitmap bitmap) {
-        // new: defensive null checks
-        if (bitmap == null) {
-            Log.w(TAG, "handleAccessibilityScreenshot: bitmap is null");
-            return;
-        }
+        if (bitmap == null) return;
         if (captureScheduler != null) {
-            // hand bitmap into same pipeline used by media projection
             captureScheduler.saveFromAccessibility(bitmap, Constants.USER_ID);
-            // also notify listeners that a capture occurred
             captureScheduler.updateCapture();
             Log.d(TAG, "handleAccessibilityScreenshot: forwarded bitmap to captureScheduler");
-        } else {
-            // if scheduler not initialized yet, optionally save to temp or log
-            Log.d(TAG, "handleAccessibilityScreenshot: captureScheduler is null - cannot save screenshot now");
         }
     }
-
 }
