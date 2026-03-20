@@ -46,6 +46,9 @@ public class CaptureActivity extends AppCompatActivity {
     private TextView m_uploadStatusDisplay;
     private TextView m_uploadResultLabel;
 
+    /** Manual pause tracking */
+    private boolean m_manualPause = false;
+
     /** Service Members*/
     private CaptureService m_captureService = null;
     private final ServiceConnection captureServiceConnection = new ServiceConnection() {
@@ -65,8 +68,10 @@ public class CaptureActivity extends AppCompatActivity {
 
                 if (Objects.requireNonNull(m_captureService.getCaptureStatus()) == CaptureScheduler.CaptureStatus.STOPPED) {
                     m_captureService.startCapture();
+                    m_manualPause = false;
                 } else {
                     m_captureService.stopCapture(true);
+                    m_manualPause = true;
                 }
 
             });
@@ -257,7 +262,9 @@ public class CaptureActivity extends AppCompatActivity {
                     m_captureService.stopCapture(false);
 
             } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
-                m_captureService.startCapture();
+                if (!m_manualPause) {
+                    m_captureService.startCapture();
+                }
             }
 
         }
