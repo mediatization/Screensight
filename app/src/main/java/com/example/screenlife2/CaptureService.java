@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
@@ -33,8 +34,6 @@ public class CaptureService extends Service {
     public void onCreate(){
         super.onCreate();
         instance = this;
-        
-        // Step 3: Formal registration for screenshots
         CaptureAccessibilityService.registerListener(this::handleAccessibilityScreenshot);
     }
 
@@ -69,7 +68,23 @@ public class CaptureService extends Service {
                 .setOngoing(true)
                 .build();
 
-        startForeground(NOTIFICATION_ID, notification);
+        // Android 14+: Determine foreground service type dynamically
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            int type = ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC;
+            
+            // Only use mediaProjection type if we actually have the projection intent data
+            if (intent != null && intent.hasExtra("intentData")) {
+                type |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION;
+                Log.d(TAG, "Starting foreground service with MEDIA_PROJECTION type");
+            } else {
+                Log.d(TAG, "Starting foreground service with DATA_SYNC type (Accessibility mode)");
+            }
+            
+            startForeground(NOTIFICATION_ID, notification, type);
+        } else {
+            startForeground(NOTIFICATION_ID, notification);
+        }
+
         return Service.START_STICKY;
     }
 

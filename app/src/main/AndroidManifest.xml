@@ -31,7 +31,7 @@
         </activity>
         <activity android:name=".CaptureActivity"> </activity>
         <service android:name=".CaptureService"
-            android:foregroundServiceType="mediaProjection"
+            android:foregroundServiceType="mediaProjection|dataSync"
             android:exported="false">
         </service>
         <!-- accessibility service for screenshots -->
