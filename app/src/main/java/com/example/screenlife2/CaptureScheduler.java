@@ -155,7 +155,7 @@ public class CaptureScheduler {
         }
         m_captureHandle.cancel(false);
         m_captureHandle = null;
-        m_captureStatus = STOPPED;
+        m_captureStatus = CaptureStatus.STOPPED;
         // Invoke listeners
         invokeListeners();
     }
@@ -212,9 +212,7 @@ public class CaptureScheduler {
             Log.d(TAG, "ImageReader is null, cannot capture via MediaProjection");
             return;
         }
-        Image image = null;
-        try {
-            image = m_imageReader.acquireLatestImage();
+        try (Image image = m_imageReader.acquireLatestImage()) {
             Log.d(TAG, "Found an image");
             if (image == null) {
                 Log.d(TAG, "Image was null, canceling capture...");
@@ -237,11 +235,8 @@ public class CaptureScheduler {
             bitmap.recycle();
         } catch (Exception e) {
             Log.e(TAG, "Error during media projection capture", e);
-        } finally {
-            if (image != null) {
-                try { image.close(); } catch (Exception ex) { /* ignore */ }
-            }
         }
+        /* ignore */
     }
 
     private void encryptImage(Bitmap bitmap, String descriptor) {

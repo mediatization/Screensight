@@ -1,6 +1,7 @@
 package com.example.screenlife2;
 
 import android.accessibilityservice.AccessibilityService;
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.ColorSpace;
 import android.hardware.HardwareBuffer;
@@ -9,6 +10,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.accessibility.AccessibilityEvent;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
@@ -18,6 +20,7 @@ import java.util.concurrent.Executor;
 /**
  * CaptureAccessibilityService - implements screenshot request and notifies registered listeners.
  */
+@SuppressLint("AccessibilityPolicy")
 public class CaptureAccessibilityService extends AccessibilityService {
     private static final String TAG = "CaptureAccessibilityService";
 
@@ -81,10 +84,6 @@ public class CaptureAccessibilityService extends AccessibilityService {
      */
     @RequiresApi(api = Build.VERSION_CODES.R)
     public void requestScreenshot() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            Log.w(TAG, "requestScreenshot: SDK < R - not supported");
-            return;
-        }
 
         try {
             final int displayId = Display.DEFAULT_DISPLAY;
@@ -92,12 +91,10 @@ public class CaptureAccessibilityService extends AccessibilityService {
 
             takeScreenshot(displayId, executor, new TakeScreenshotCallback() {
                 @Override
-                public void onSuccess(ScreenshotResult screenshot) {
+                public void onSuccess(@NonNull ScreenshotResult screenshot) {
                     try {
                         HardwareBuffer hb = screenshot.getHardwareBuffer();
                         ColorSpace cs = screenshot.getColorSpace();
-
-                        if (hb == null) return;
 
                         Bitmap wrapped = Bitmap.wrapHardwareBuffer(hb, cs);
                         if (wrapped == null) {

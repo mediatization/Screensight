@@ -1,6 +1,7 @@
 package com.example.screenlife2;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -45,6 +46,7 @@ public class OnboardActivity extends AppCompatActivity {
 
     private TextView m_batteryStatus;
 
+    @SuppressLint("BatteryLife")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,9 +81,7 @@ public class OnboardActivity extends AppCompatActivity {
         }
 
         if (m_enableBatteryButton != null) {
-            m_enableBatteryButton.setOnClickListener(v -> {
-                startActivity(new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:"+getPackageName())));
-            });
+            m_enableBatteryButton.setOnClickListener(v -> startActivity(new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:"+getPackageName()))));
         }
 
         // Add submit button on click listener
@@ -135,9 +135,7 @@ public class OnboardActivity extends AppCompatActivity {
                     intent.setData(uri);
                     startActivity(intent);
                 })
-                .setNegativeButton("Go to Accessibility", (dialog, which) -> {
-                    startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS));
-                })
+                .setNegativeButton("Go to Accessibility", (dialog, which) -> startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)))
                 .show();
     }
 
