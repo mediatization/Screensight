@@ -27,6 +27,7 @@ import androidx.work.WorkManager;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 public class OnboardActivity extends AppCompatActivity {
@@ -230,6 +231,7 @@ public class OnboardActivity extends AppCompatActivity {
                         15, // 15 minutes
                         TimeUnit.MINUTES
                 )
+                        .setInitialDelay(15, TimeUnit.MINUTES)
                         .setConstraints(constraints)
                         .build();
 
