@@ -46,6 +46,9 @@ public class CaptureActivity extends AppCompatActivity {
     private TextView m_uploadStatusDisplay;
     private TextView m_uploadResultLabel;
 
+    /** Manual pause tracking */
+    private boolean m_manualPause = false;
+
     /** Service Members*/
     private CaptureService m_captureService = null;
     private final ServiceConnection captureServiceConnection = new ServiceConnection() {
@@ -65,8 +68,10 @@ public class CaptureActivity extends AppCompatActivity {
 
                 if (Objects.requireNonNull(m_captureService.getCaptureStatus()) == CaptureScheduler.CaptureStatus.STOPPED) {
                     m_captureService.startCapture();
+                    m_manualPause = false;
                 } else {
                     m_captureService.stopCapture(true);
+                    m_manualPause = true;
                 }
 
             });
@@ -220,13 +225,20 @@ public class CaptureActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         // Request notifications
         startNotificationRequest();
-        // Request media projection if accessibility isn't enabled
-        m_projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
-        startMediaProjectionRequest();
+        
         // Create
         super.onCreate(savedInstanceState);
         // Load the UI layout from res/layout/activity_main.xml
         setContentView(R.layout.activity_main);
+
+        // Request media projection ONLY if accessibility isn't enabled
+        if (!AccessibilityUtil.isAccessibilityServiceEnabled(this, CaptureAccessibilityService.class)) {
+            m_projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
+            startMediaProjectionRequest();
+        } else {
+            // Accessibility is enabled, so we don't need MediaProjection.
+            initializeService(null);
+        }
 
         // Log message indicating that the UI is being displayed
         Log.d(TAG, "Activity Created");
@@ -250,7 +262,9 @@ public class CaptureActivity extends AppCompatActivity {
                     m_captureService.stopCapture(false);
 
             } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
-                m_captureService.startCapture();
+                if (!m_manualPause) {
+                    m_captureService.startCapture();
+                }
             }
 
         }
@@ -278,7 +292,7 @@ public class CaptureActivity extends AppCompatActivity {
                     // Permission granted
                     Toast.makeText(CaptureActivity.this, "Media Projection Permission Granted", Toast.LENGTH_SHORT).show();
                     // Now you can start the screen capture
-                    onResult(result);
+                    initializeService(result);
                 } else {
                     // Permission denied
                     Toast.makeText(CaptureActivity.this, "Permission Denied. Closing...", Toast.LENGTH_SHORT).show();
@@ -328,7 +342,7 @@ public class CaptureActivity extends AppCompatActivity {
         new Handler().postDelayed(this::finishAffinity, 2000); // 2-second delay to allow the user to read the message
     }
 
-    public void onResult(ActivityResult result)
+    public void initializeService(@Nullable ActivityResult result)
     {
         // Set up UI
         m_blackOutPanel = findViewById(R.id.m_blackOutPanel);
@@ -345,13 +359,19 @@ public class CaptureActivity extends AppCompatActivity {
         int screenDensity = metrics.densityDpi;
         // Set up the capture service
         Intent screenCaptureIntent = new Intent(CaptureActivity.this, CaptureService.class);
-        screenCaptureIntent.putExtra("resultCode", result.getResultCode());
-        screenCaptureIntent.putExtra("intentData", result.getData());
+        if (result != null) {
+            screenCaptureIntent.putExtra("resultCode", result.getResultCode());
+            screenCaptureIntent.putExtra("intentData", result.getData());
+        } else {
+            screenCaptureIntent.putExtra("resultCode", -1);
+        }
         screenCaptureIntent.putExtra("screenDensity", screenDensity);
         // Start the service
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Log.d(TAG, "Calling startForegroundService");
             startForegroundService(screenCaptureIntent);
+        } else {
+            startService(screenCaptureIntent);
         }
         // Bind the service
         bindService(screenCaptureIntent, captureServiceConnection, Context.BIND_AUTO_CREATE);

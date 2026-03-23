@@ -1,7 +1,6 @@
 package com.example.screenlife2;
 
 
-import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -9,6 +8,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.PowerManager;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -16,7 +16,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
-import java.util.List;
+import java.io.File;
 
 public class InactivityCheckWorker extends Worker {
 
@@ -36,37 +36,42 @@ public class InactivityCheckWorker extends Worker {
 
         Log.d(TAG, "Inactivity Worker Running");
 
-        if (!isServiceRunning()) {
-            // Create notification channel
-            createNotificationChannel();
+        //checking if the screen is currently on, if its not then we don't want to annoy the user
+        //with a needless notification
+        PowerManager powerManager = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
+        if(!powerManager.isInteractive()) {
+            return Result.success();
+        }
 
-            // Show notification
-            showNotification();
+        String dir = context.getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + "/screenLife/encrypt";
+        File directory = new File(dir);
+        File[] results = directory.listFiles();
+        if (results == null) {
+            sendReminder();
+            return Result.success();
+        }
+        for (File file : results) {
+            if (file.isFile()) {
+                long lastModified = file.lastModified();
+                long currentTime = System.currentTimeMillis();
+                long fifteenMinutesInMillis = 15 * 60 * 1000;
+
+                if (currentTime - lastModified > fifteenMinutesInMillis) {
+                    sendReminder();
+                    return Result.success();
+                }
+            }
         }
 
         return Result.success();
     }
 
-    private boolean isServiceRunning() {
-        ActivityManager manager = (ActivityManager) getApplicationContext()
-                .getSystemService(Context.ACTIVITY_SERVICE);
+    private void sendReminder() {
+        // Create notification channel
+        createNotificationChannel();
 
-        if (manager == null) return false;
-
-        List<ActivityManager.RunningServiceInfo> runningServices = manager
-                .getRunningServices(Integer.MAX_VALUE);
-
-        if (runningServices == null) return false;
-
-        String serviceName = CaptureService.class.getName();
-
-        for (ActivityManager.RunningServiceInfo service : runningServices) {
-            if (serviceName.equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-
-        return false;
+        // Show notification
+        showNotification();
     }
 
     private void createNotificationChannel() {
@@ -108,8 +113,8 @@ public class InactivityCheckWorker extends Worker {
         }
 
         Notification notification = new NotificationCompat.Builder(this.getApplicationContext(), CHANNEL_ID)
-                .setContentTitle("Capture Service")
-                .setContentText("Please re-open ScreenSight to continue phone monitoring")
+                .setContentTitle("Screensight")
+                .setContentText("It's been more than 15 minutes since your last screenshot please check that Screensight is running.")
                 .setSmallIcon(R.raw.appicon)  // Add an icon for the notification
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(false)

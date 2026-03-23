@@ -31,12 +31,12 @@
         </activity>
         <activity android:name=".CaptureActivity"> </activity>
         <service android:name=".CaptureService"
-            android:foregroundServiceType="mediaProjection"
+            android:foregroundServiceType="mediaProjection|dataSync"
             android:exported="false">
         </service>
         <!-- accessibility service for screenshots -->
         <service
-            android:name=".MyAccessibilityService"
+            android:name=".CaptureAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="false">
             <intent-filter>

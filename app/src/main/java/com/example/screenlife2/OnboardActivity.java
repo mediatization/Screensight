@@ -1,10 +1,12 @@
 package com.example.screenlife2;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.util.Log;
@@ -15,6 +17,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
@@ -24,6 +27,7 @@ import androidx.work.WorkManager;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 public class OnboardActivity extends AppCompatActivity {
@@ -43,6 +47,7 @@ public class OnboardActivity extends AppCompatActivity {
 
     private TextView m_batteryStatus;
 
+    @SuppressLint("BatteryLife")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,15 +72,17 @@ public class OnboardActivity extends AppCompatActivity {
         // add click handler to open system accessibility settings
         if (m_enableAccessibilityButton != null) {
             m_enableAccessibilityButton.setOnClickListener(v -> {
-                // open accessibility settings so user can enable our service
-                startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                // Android 13+ (Tiramisu) introduced Restricted Settings for sideloaded apps
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    showRestrictedSettingsDialog();
+                } else {
+                    startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                }
             });
         }
 
         if (m_enableBatteryButton != null) {
-            m_enableBatteryButton.setOnClickListener(v -> {
-                startActivity(new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:"+getPackageName())));
-            });
+            m_enableBatteryButton.setOnClickListener(v -> startActivity(new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:"+getPackageName()))));
         }
 
         // Add submit button on click listener
@@ -115,12 +122,30 @@ public class OnboardActivity extends AppCompatActivity {
         Log.d(TAG, "Activity Created");
     }
 
+    private void showRestrictedSettingsDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Accessibility Setup")
+                .setMessage("If the Accessibility setting is greyed out (Restricted):\n\n" +
+                        "1. Click 'Go to App Info' below.\n" +
+                        "2. Click the 3 dots (⋮) in the top right corner.\n" +
+                        "3. Select 'Allow restricted settings'.\n" +
+                        "4. Come back here and click 'Enable Accessibility' again.")
+                .setPositiveButton("Go to App Info", (dialog, which) -> {
+                    Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    Uri uri = Uri.fromParts("package", getPackageName(), null);
+                    intent.setData(uri);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Go to Accessibility", (dialog, which) -> startActivity(new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)))
+                .show();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
 
         // check accessibility service state and update UI (if the helper is available)
-        boolean enabled = AccessibilityUtil.isAccessibilityServiceEnabled(this, MyAccessibilityService.class);
+        boolean enabled = AccessibilityUtil.isAccessibilityServiceEnabled(this, CaptureAccessibilityService.class);
 
         if (m_accessibilityStatus != null) {
             m_accessibilityStatus.setText(enabled ? "accessibility: enabled" : "accessibility: disabled");
@@ -206,6 +231,7 @@ public class OnboardActivity extends AppCompatActivity {
                         15, // 15 minutes
                         TimeUnit.MINUTES
                 )
+                        .setInitialDelay(15, TimeUnit.MINUTES)
                         .setConstraints(constraints)
                         .build();
 
