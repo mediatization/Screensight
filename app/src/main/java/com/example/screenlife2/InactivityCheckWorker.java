@@ -50,17 +50,25 @@ public class InactivityCheckWorker extends Worker {
             sendReminder();
             return Result.success();
         }
+
+        long mostRecentlyModified = 0;
+
         for (File file : results) {
             if (file.isFile()) {
                 long lastModified = file.lastModified();
-                long currentTime = System.currentTimeMillis();
-                long fifteenMinutesInMillis = 15 * 60 * 1000;
 
-                if (currentTime - lastModified > fifteenMinutesInMillis) {
-                    sendReminder();
-                    return Result.success();
+                if (lastModified > mostRecentlyModified) {
+                    mostRecentlyModified = lastModified;
                 }
+
             }
+        }
+
+        long currentTime = System.currentTimeMillis();
+        long fifteenMinutesInMillis = 15 * 60 * 1000;
+
+        if (currentTime - mostRecentlyModified > fifteenMinutesInMillis) {
+            sendReminder();
         }
 
         return Result.success();
