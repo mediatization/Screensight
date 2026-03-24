@@ -51,26 +51,22 @@ public class InactivityCheckWorker extends Worker {
             return Result.success();
         }
 
-        long mostRecentlyModified = 0;
+        //now checking if any image was taken within the past 15 minutes
+        long currentTime = System.currentTimeMillis();
+        long fifteenMinutesInMillis = 15 * 60 * 1000;
 
         for (File file : results) {
             if (file.isFile()) {
                 long lastModified = file.lastModified();
 
-                if (lastModified > mostRecentlyModified) {
-                    mostRecentlyModified = lastModified;
+                if (currentTime - lastModified < fifteenMinutesInMillis) {
+                    return Result.success();
                 }
 
             }
         }
 
-        long currentTime = System.currentTimeMillis();
-        long fifteenMinutesInMillis = 15 * 60 * 1000;
-
-        if (currentTime - mostRecentlyModified > fifteenMinutesInMillis) {
-            sendReminder();
-        }
-
+        sendReminder();
         return Result.success();
     }
 
