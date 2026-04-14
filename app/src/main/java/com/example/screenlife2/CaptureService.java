@@ -40,16 +40,15 @@ public class CaptureService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Capture Service On Start was called");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Capture Service Channel",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                manager.createNotificationChannel(channel);
-            }
+        
+        NotificationChannel channel = new NotificationChannel(
+                CHANNEL_ID,
+                "Capture Service Channel",
+                NotificationManager.IMPORTANCE_HIGH
+        );
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        if (manager != null) {
+            manager.createNotificationChannel(channel);
         }
 
         PendingIntent pendingIntent;
@@ -68,7 +67,7 @@ public class CaptureService extends Service {
                 .setOngoing(true)
                 .build();
 
-        // Android 14+: Determine foreground service type dynamically
+        // Android 10+: Determine foreground service type dynamically
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             int type = ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC;
             

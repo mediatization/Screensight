@@ -30,6 +30,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
+import java.io.File;
 import java.util.Objects;
 
 public class CaptureActivity extends AppCompatActivity {
@@ -73,7 +74,10 @@ public class CaptureActivity extends AppCompatActivity {
                     m_captureService.stopCapture(true);
                     m_manualPause = true;
                 }
-
+                
+                // Persist the manual pause state
+                Settings.setString("manualPause", String.valueOf(m_manualPause));
+                Settings.save();
             });
 
             m_uploadButton.setOnClickListener((View view) ->
@@ -231,6 +235,16 @@ public class CaptureActivity extends AppCompatActivity {
         // Load the UI layout from res/layout/activity_main.xml
         setContentView(R.layout.activity_main);
 
+        // Ensure settings are loaded
+        if (Settings.JSON() == null) {
+            File directory = new File(getExternalFilesDir(null), "/screenlife");
+            File jsonFile = new File(directory, "settings.JSON");
+            if (jsonFile.exists()) {
+                Settings.load(jsonFile);
+            }
+        }
+        m_manualPause = Boolean.parseBoolean(Settings.getString("manualPause", "false"));
+
         // Request media projection ONLY if accessibility isn't enabled
         if (!AccessibilityUtil.isAccessibilityServiceEnabled(this, CaptureAccessibilityService.class)) {
             m_projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
@@ -247,7 +261,7 @@ public class CaptureActivity extends AppCompatActivity {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_SCREEN_ON);
-        registerReceiver(screenStateReceiver, filter);
+        registerReceiver(screenStateReceiver, filter, Context.RECEIVER_EXPORTED);
     }
 
     //whenever the phone goes to sleep/wakes up our activity takes notice
@@ -324,7 +338,7 @@ public class CaptureActivity extends AppCompatActivity {
         if (m_projectionManager != null) {
             Intent intent;
             // Ask specifically for full screen projecting
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 intent = m_projectionManager.createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay());
             }
             else{
@@ -366,13 +380,11 @@ public class CaptureActivity extends AppCompatActivity {
             screenCaptureIntent.putExtra("resultCode", -1);
         }
         screenCaptureIntent.putExtra("screenDensity", screenDensity);
-        // Start the service
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.d(TAG, "Calling startForegroundService");
-            startForegroundService(screenCaptureIntent);
-        } else {
-            startService(screenCaptureIntent);
-        }
+        
+        // Android 8.0+ simplified call
+        Log.d(TAG, "Calling startForegroundService");
+        startForegroundService(screenCaptureIntent);
+
         // Bind the service
         bindService(screenCaptureIntent, captureServiceConnection, Context.BIND_AUTO_CREATE);
 

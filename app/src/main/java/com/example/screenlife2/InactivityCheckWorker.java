@@ -79,17 +79,14 @@ public class InactivityCheckWorker extends Worker {
     }
 
     private void createNotificationChannel() {
-        // Create a notification channel for Android 8.0 and higher
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationManager manager = context.getSystemService(NotificationManager.class);
-            if (manager != null) {
-                NotificationChannel channel = new NotificationChannel(
-                        CHANNEL_ID,
-                        "Inactivity Check Worker",
-                        NotificationManager.IMPORTANCE_HIGH
-                );
-                manager.createNotificationChannel(channel);
-            }
+        NotificationManager manager = context.getSystemService(NotificationManager.class);
+        if (manager != null) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Inactivity Check Worker",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            manager.createNotificationChannel(channel);
         }
     }
 
